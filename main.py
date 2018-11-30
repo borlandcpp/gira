@@ -31,7 +31,7 @@ class Git(object):
     def __init__(self, path="."):
         self.path = path
         self.repo = Repo(self.path)  # causes exception
-        self.origin = self.repo.remotes["orgin"]
+        self.origin = self.repo.remotes["origin"].url
 
     def info(self):
         p = giturlparse.parse(self.origin)
