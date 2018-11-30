@@ -119,6 +119,7 @@ def must_env(name):
         print("Missing environment variable: %s" % name)
         sys.exit(3)
 
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("Give me a PR number.")
