@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import requests
-import urllib
 import os
 import sys
 import json
-from git import Repo
+import urllib
+import requests
 import giturlparse
+from git import Repo
 
 
 class GiteeError(Exception):
@@ -19,8 +19,11 @@ class Gitee(object):
     def __init__(self, user, token):
         self.user = user
         self.token = token
-        self.git = Git()
-        self.owner, self.repo = self.git.info()
+        try:
+            self.git = Git()
+            self.owner, self.repo = self.git.info()
+        except Exception:  # TODO: catch narrower exceptions
+            raise GiteeError("You should run this from within a gitee repo")
         self._root = Gitee.api_root % (self.owner, self.repo)
 
     def _url(self, urls, params):
@@ -55,8 +58,8 @@ class Gitee(object):
 
 class PR(object):
     def __init__(self, jsn):
-        # TODO: handle exceptions
         self.raw = jsn
+        # TODO: handle exceptions
         self.data = json.loads(jsn)
 
     def good(self):
@@ -68,11 +71,14 @@ class PR(object):
     def dump(self):
         print(self.raw)
 
+    def __getattr__(self, att):
+        return self.data[att]
+
 
 class Git(object):
     def __init__(self, path="."):
         self.path = path
-        self.repo = Repo(self.path)  # causes exception
+        self.repo = Repo(self.path)
         self.origin = self.repo.remotes["origin"].url
 
     def info(self):
@@ -87,10 +93,11 @@ def main(user, token, no):
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
         if not pr.good():
-            print("Invalid PR. Should be assigned to reviwer as well as tester")
+            print("Invalid PR. Should be assigned to reviwer as well as tester.")
+            print(pr.url)
             return 0
         elif pr.merged():
-            print("Already merged. Nothing to do")
+            print("Already merged. Nothing to do.")
             return 0
     except GiteeError as e:
         print("Error: %s" % e, file=sys.stderr)
@@ -112,5 +119,8 @@ def must_env(name):
         sys.exit(3)
 
 if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print("Give me a PR number.")
+        sys.exit(4)
     pr = sys.argv[1]
     sys.exit(main(must_env("GITEE_USER"), must_env("GITEE_TOKEN"), pr))
