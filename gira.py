@@ -92,23 +92,24 @@ def main(user, token, no):
     try:
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
-        if not pr.good():
-            print("Invalid PR. Should be assigned to reviwer as well as tester.")
-            print(pr.url)
-            return 0
-        elif pr.merged():
-            print("Already merged. Nothing to do.")
-            return 0
     except GiteeError as e:
         print("Error: %s" % e, file=sys.stderr)
         return 1
+
+    if not pr.good():
+        print("Invalid PR. Should be assigned to reviwer as well as tester.")
+        print(pr.url)
+        return 0
+    elif pr.merged():
+        print("Already merged. Nothing to do.")
+        return 0
 
     try:
         gitee.merge(no)
     except GiteeError as e:
         pr.dump()
         print("\n\nFailed to merge PR: %s" % e, file=sys.stderr)
-        sys.exit(2)
+        return 2
 
 
 def must_env(name):
