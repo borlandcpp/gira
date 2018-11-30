@@ -23,7 +23,6 @@ class Gitee(object):
         return os.path.join(self._root, *urls) + '?' + urllib.parse.urlencode(params)
 
     def get(self, url, params):
-        print(self._url(url, params))
         return requests.get(self._url(url, params))
 
 
@@ -42,5 +41,4 @@ class Git(object):
 
 gitee = Gitee("borlandc", "efc230e91b187fdf8021018fc76a575c")
 pr = gitee.get(("pulls", "1"), {})
-pprint(pr)
-pprint(pr.text)
+print(pr.text)
