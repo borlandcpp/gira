@@ -143,12 +143,17 @@ def main(user, token, no):
         return 2
 
 
-def load_conf(name):
+def load_conf(*names):
     global _conf
     # TODO: should validate config file
     # TODO: catch error
-    with open(name) as f:
-        _conf = toml.loads(f.read())
+    for n in names:
+        try:
+            f = open(n)
+            _conf = toml.loads(f.read())
+            f.close()
+        except IOError:
+            continue
 
 
 if __name__ == "__main__":
@@ -156,5 +161,10 @@ if __name__ == "__main__":
         print("Give me a PR number.")
         sys.exit(4)
     pr = sys.argv[1]
-    load_conf("config.toml")
+    load_conf(os.path.join(os.environ["HOME"], "gira.toml"),
+            os.path.join(os.environ["HOME"], ".config/gira.toml"),
+            "gira.toml")
+    if _conf is None:
+        print("Failed to load config file.")
+        sys.exit(1)
     sys.exit(main(_conf["gitee"]["user"], _conf["gitee"]["token"], pr))
