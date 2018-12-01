@@ -1,0 +1,8 @@
+[jira]
+user = "xxx"
+passwd = "xxx"
+
+[gitee]
+user = "xxxx"
+token = "xxxx"
+
