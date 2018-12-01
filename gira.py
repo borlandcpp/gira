@@ -114,7 +114,7 @@ def update_jira(pr):
     jira = JIRA(_jira_url, auth=(
         _conf["jira"]["user"], _conf["jira"]["passwd"]))
     comment = "PR %d Signed off by %s and %s.\n%s" % (
-            pr.number, pr.reviwer, pr.tester, pr.html_url)
+            pr.number, pr.reviwer, pr.tester, pr.url)
     jira.add_comment(pr.issue_id, comment)
 
 
