@@ -1,6 +1,7 @@
 [jira]
 user = "xxx"
 passwd = "xxx"
+url = "xxx"
 
 [gitee]
 user = "xxxx"
