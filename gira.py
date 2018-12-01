@@ -3,10 +3,17 @@
 import os
 import sys
 import json
+import re
 import urllib
 import requests
 import giturlparse
+import toml
 from git import Repo
+from jira import JIRA
+
+
+_jira_url = "http://jira.wise2c.com"
+_conf = None
 
 
 class GiteeError(Exception):
@@ -63,7 +70,8 @@ class PR(object):
         self.data = json.loads(jsn)
 
     def good(self):
-        return self.data["assignee"] and self.data["tester"]
+        return len(self.data["assignee"]) >= 1 and \
+               len(self.data["tester"]) >= 1
 
     def merged(self):
         return self.data["state"] == "merged"
@@ -71,7 +79,21 @@ class PR(object):
     def dump(self):
         print(self.raw)
 
+    def _get_jira_issue_id(self):
+        pat = re.compile("^([A-Z]*-\d*)")
+        mo = re.match(pat, self.title)
+        if not mo:
+            raise ValueError("Invalid PR title: %s" % self.title)
+        return mo.group(1)
+
     def __getattr__(self, att):
+        if att == "issue_id":
+            return self._get_jira_issue_id()
+        elif att == "reviwer":
+            return self.data["assignee"][0]["name"]
+        elif att == "tester":
+            return self.data["tester"][0]["name"]
+
         return self.data[att]
 
 
@@ -86,6 +108,14 @@ class Git(object):
         if not p.valid:
             return None, None
         return p.owner, p.repo
+
+
+def update_jira(pr):
+    jira = JIRA(_jira_url, auth=(
+        _conf["jira"]["user"], _conf["jira"]["passwd"]))
+    comment = "PR %d Signed off by %s and %s.\n%s" % (
+            pr.number, pr.reviwer, pr.tester, pr.url)
+    jira.add_comment(pr.issue_id, comment)
 
 
 def main(user, token, no):
@@ -106,6 +136,7 @@ def main(user, token, no):
 
     try:
         gitee.merge(no)
+        update_jira(pr)
     except GiteeError as e:
         pr.dump()
         print("\n\nFailed to merge PR: %s" % e, file=sys.stderr)
@@ -120,9 +151,18 @@ def must_env(name):
         sys.exit(3)
 
 
+def load_conf(name):
+    global _conf
+    # TODO: should validate config file
+    # TODO: catch error
+    with open(name) as f:
+        _conf = toml.loads(f.read())
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print("Give me a PR number.")
         sys.exit(4)
     pr = sys.argv[1]
-    sys.exit(main(must_env("GITEE_USER"), must_env("GITEE_TOKEN"), pr))
+    load_conf("config.toml")
+    sys.exit(main(_conf["gitee"]["user"], _conf["gitee"]["token"], pr))
