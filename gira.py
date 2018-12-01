@@ -21,7 +21,7 @@ class GiteeError(Exception):
 
 
 class Gitee(object):
-    api_root = "https://gitee.com/api/v5/repos/%s/%s"
+    api_root = "https://gitee.com/api/v5/repos/{}/{}"
 
     def __init__(self, user, token):
         self.user = user
@@ -31,7 +31,7 @@ class Gitee(object):
             self.owner, self.repo = self.git.info()
         except Exception:  # TODO: catch narrower exceptions
             raise GiteeError("You should run this from within a gitee repo")
-        self._root = Gitee.api_root % (self.owner, self.repo)
+        self._root = Gitee.api_root.format(self.owner, self.repo)
 
     def _url(self, urls, params):
         if params is not None:  # this is for GET
@@ -83,7 +83,7 @@ class PR(object):
         pat = re.compile("^([A-Z]*-\d*)")
         mo = re.match(pat, self.title)
         if not mo:
-            raise ValueError("Invalid PR title: %s" % self.title)
+            raise ValueError(f"Invalid PR title: {self.title}")
         return mo.group(1)
 
     def __getattr__(self, att):
@@ -123,7 +123,7 @@ def main(user, token, no):
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
     except GiteeError as e:
-        print("Error: %s" % e, file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
     if not pr.good():
@@ -139,16 +139,8 @@ def main(user, token, no):
         update_jira(pr)
     except GiteeError as e:
         pr.dump()
-        print("\n\nFailed to merge PR: %s" % e, file=sys.stderr)
+        print(f"\n\nFailed to merge PR: {e}", file=sys.stderr)
         return 2
-
-
-def must_env(name):
-    try:
-        return os.environ[name]
-    except KeyError:
-        print("Missing environment variable: %s" % name)
-        sys.exit(3)
 
 
 def load_conf(name):
