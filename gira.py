@@ -12,7 +12,6 @@ from git import Repo
 from jira import JIRA
 
 
-_jira_url = "http://jira.wise2c.com"
 _conf = None
 
 
@@ -111,7 +110,7 @@ class Git(object):
 
 
 def update_jira(pr):
-    jira = JIRA(_jira_url, auth=(
+    jira = JIRA(_conf["jira"]["url"], auth=(
         _conf["jira"]["user"], _conf["jira"]["passwd"]))
     comment = "PR %d Signed off by %s and %s.\n%s" % (
             pr.number, pr.reviwer, pr.tester, pr.html_url)
