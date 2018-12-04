@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+import giturlparse
 import os
 import sys
 import json
 import re
 import urllib
 import requests
-import giturlparse
 import toml
 from git import Repo
 from jira import JIRA
@@ -113,7 +113,7 @@ def update_jira(pr):
     jira = JIRA(_conf["jira"]["url"], auth=(
         _conf["jira"]["user"], _conf["jira"]["passwd"]))
     comment = "PR %d Signed off by %s and %s.\n%s" % (
-            pr.number, pr.reviwer, pr.tester, pr.url)
+            pr.number, pr.reviwer, pr.tester, pr.html_url)
     jira.add_comment(pr.issue_id, comment)
 
 
@@ -127,7 +127,7 @@ def main(user, token, no):
 
     if not pr.good():
         print("Invalid PR. Should be assigned to reviwer as well as tester.")
-        print(pr.url)
+        print(pr.html_url)
         return 0
     elif pr.merged():
         print("Already merged. Nothing to do.")
