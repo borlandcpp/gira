@@ -43,6 +43,15 @@ class Gitee(object):
     def get(self, url, params):
         return requests.get(self._url(url, params))
 
+    def put(self, url, _data):
+        d = {
+            "access_token": self.token,
+            "owner": self.owner,
+            "repo": self.repo
+        }
+        d.update(_data)
+        return requests.put(url, data=d)
+
     def get_pr(self, pr):
         res = self.get(("pulls", pr), {})
         if not res.status_code == 200:
@@ -50,27 +59,25 @@ class Gitee(object):
         return res.text
 
     def merge(self, pr):
-        res = requests.put(
+        res = self.put(
             self._url(("pulls", pr, "merge"), None),
-            data = {
-                "access_token": self.token,
-                "owner": self.owner,
-                "repo": self.repo,
-                "number": pr
-            }
+            { "number": pr }
         )
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
     def lock_branch(self, branch):
-        res = requests.put(
+        res = self.put(
             self._url(("branches", branch, "protection"), None),
-            data = {
-                "access_token": self.token,
-                "owner": self.owner,
-                "repo": self.repo,
-                "branch": branch
-            }
+            { "branch": branch }
+        )
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+
+    def add_user(self, username, permission):
+        res = self.put(
+            self._url(("collaborators", username), None),
+            { "permission": permission }
         )
         if not res.status_code == 200:
             raise GiteeError(res.text)
@@ -173,6 +180,18 @@ def lock(branch):
     try:
         gitee = Gitee(user, token)
         gitee.lock_branch(branch)
+    except Exception as e:
+        print(e)
+
+
+@main.command()
+@click.argument('user')
+def add(user):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        gitee.add_user(user, "push")
     except Exception as e:
         print(e)
 
