@@ -6,6 +6,7 @@ import sys
 import json
 import re
 import urllib
+import click
 import requests
 import toml
 from git import Repo
@@ -56,6 +57,19 @@ class Gitee(object):
                 "owner": self.owner,
                 "repo": self.repo,
                 "number": pr
+            }
+        )
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+
+    def lock_branch(self, branch):
+        res = requests.put(
+            self._url(("branches", branch, "protection"), None),
+            data = {
+                "access_token": self.token,
+                "owner": self.owner,
+                "repo": self.repo,
+                "branch": branch
             }
         )
         if not res.status_code == 200:
@@ -117,7 +131,16 @@ def update_jira(pr):
     jira.add_comment(pr.issue_id, comment)
 
 
-def main(user, token, no):
+@click.group()
+def main():
+    pass
+
+
+@main.command()
+@click.argument('no')
+def merge(no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
     try:
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
@@ -142,6 +165,18 @@ def main(user, token, no):
         return 2
 
 
+@main.command()
+@click.argument('branch')
+def lock(branch):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        gitee.lock_branch(branch)
+    except Exception as e:
+        print(e)
+
+
 def load_conf(*names):
     global _conf
     # TODO: should validate config file
@@ -156,14 +191,10 @@ def load_conf(*names):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        print("Give me a PR number.")
-        sys.exit(4)
-    pr = sys.argv[1]
     load_conf(os.path.join(os.environ["HOME"], "gira.toml"),
             os.path.join(os.environ["HOME"], ".config/gira.toml"),
             "gira.toml")
     if _conf is None:
         print("Failed to load config file.")
         sys.exit(1)
-    sys.exit(main(_conf["gitee"]["user"], _conf["gitee"]["token"], pr))
+    main()
