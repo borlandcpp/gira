@@ -7,6 +7,7 @@ import json
 import re
 import urllib
 import click
+import subprocess
 import requests
 import toml
 from git import Repo
@@ -22,6 +23,7 @@ class GiteeError(Exception):
 
 class Gitee(object):
     api_root = "https://gitee.com/api/v5/repos/{}/{}"
+    web_root = "https://www.gitee.com/"
 
     def __init__(self, user, token):
         self.user = user
@@ -82,6 +84,10 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
+    def goto_web(self):
+        url = os.path.join(Gitee.web_root, self.owner, self.repo)
+        subprocess.run(["open", url])
+        
 
 class PR(object):
     def __init__(self, jsn):
@@ -192,6 +198,17 @@ def add(user):
     try:
         gitee = Gitee(user, token)
         gitee.add_user(user, "push")
+    except Exception as e:
+        print(e)
+
+
+@main.command()
+def web():
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        gitee.goto_web()
     except Exception as e:
         print(e)
 
