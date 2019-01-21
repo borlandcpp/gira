@@ -24,6 +24,7 @@ class GiteeError(Exception):
 class Gitee(object):
     api_root = "https://gitee.com/api/v5/repos/{}/{}"
     web_root = "https://www.gitee.com/"
+    allowed_permissions = ('push', 'pull', 'admin')
 
     def __init__(self, user, token):
         self.user = user
@@ -41,6 +42,9 @@ class Gitee(object):
             return os.path.join(self._root, *urls) + '?' + urllib.parse.urlencode(params)
         else:  # for PUT and POST
             return os.path.join(self._root, *urls)
+        
+    def _good_perm(self, perm):
+        return perm in Gitee.allowed_permissions
 
     def get(self, url, params):
         return requests.get(self._url(url, params))
@@ -53,6 +57,9 @@ class Gitee(object):
         }
         d.update(_data)
         return requests.put(url, data=d)
+
+    def delete(self, url):
+        return requests.delete(url)
 
     def get_pr(self, pr):
         res = self.get(("pulls", pr), {})
@@ -76,13 +83,21 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
-    def add_user(self, username, permission):
+    def add_user(self, username, permission='push'):
+        if not self._good_perm(permission):
+            raise ValueError("invalid permission: {permission}")
         res = self.put(
             self._url(("collaborators", username), None),
             { "permission": permission }
         )
         if not res.status_code == 200:
             raise GiteeError(res.text)
+
+    def del_user(self, username):
+        res = self.delete(self._url(("collaborators", username), {}))
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+
 
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
@@ -192,12 +207,25 @@ def lockbr(branch):
 
 @main.command()
 @click.argument('user')
-def adduser(user):
+@click.argument('permission', default='push')
+def adduser(user, permission):
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
         gitee = Gitee(me, token)
-        gitee.add_user(user, "push")
+        gitee.add_user(user, permission)
+    except Exception as e:
+        print(e)
+
+
+@main.command()
+@click.argument('user')
+def deluser(user):
+    me = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(me, token)
+        gitee.del_user(user)
     except Exception as e:
         print(e)
 
