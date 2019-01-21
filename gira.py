@@ -180,7 +180,7 @@ def merge(no):
 
 @main.command()
 @click.argument('branch')
-def lock(branch):
+def lockbr(branch):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -192,7 +192,7 @@ def lock(branch):
 
 @main.command()
 @click.argument('user')
-def add(user):
+def adduser(user):
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
