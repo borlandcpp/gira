@@ -193,10 +193,10 @@ def lock(branch):
 @main.command()
 @click.argument('user')
 def add(user):
-    user = _conf["gitee"]["user"]
+    me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
-        gitee = Gitee(user, token)
+        gitee = Gitee(me, token)
         gitee.add_user(user, "push")
     except Exception as e:
         print(e)
