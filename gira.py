@@ -111,8 +111,8 @@ class PR(object):
         self.data = json.loads(jsn)
 
     def good(self):
-        return len(self.data["assignee"]) >= 1 and \
-               len(self.data["tester"]) >= 1
+        return len(self.data["assignees"]) >= 1 and \
+               len(self.data["testers"]) >= 1
 
     def merged(self):
         return self.data["state"] == "merged"
@@ -131,9 +131,9 @@ class PR(object):
         if att == "issue_id":
             return self._get_jira_issue_id()
         elif att == "reviwer":
-            return self.data["assignee"][0]["name"]
+            return self.data["assignees"][0]["name"]
         elif att == "tester":
-            return self.data["tester"][0]["name"]
+            return self.data["testers"][0]["name"]
 
         return self.data[att]
 
