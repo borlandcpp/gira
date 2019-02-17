@@ -111,6 +111,10 @@ class PR(object):
         self.data = json.loads(jsn)
 
     def good(self):
+        try:
+            _ =  self.issue_id  # make sure it's valid
+        except ValueError:
+            return False
         return len(self.data["assignees"]) >= 1 and \
                len(self.data["testers"]) >= 1
 
@@ -177,8 +181,10 @@ def merge(no):
         return 1
 
     if not pr.good():
-        print("Invalid PR. Should be assigned to reviwer as well as tester.")
-        print(pr.html_url)
+        print("Invalid PR. Possible causes are:")
+        print("  1. PR not assigned to both reviwer and tester.")
+        print("  2. PR title doesn't start with jira issue ID. e.g. CLOUD-1234")
+        print(f"\n{pr.html_url}")
         return 0
     elif pr.merged():
         print("Already merged. Nothing to do.")
