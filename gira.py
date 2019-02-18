@@ -160,7 +160,10 @@ def update_jira(pr):
         _conf["jira"]["user"], _conf["jira"]["passwd"]))
     comment = "PR %d signed off by %s and %s.\n%s" % (
             pr.number, pr.reviwer, pr.tester, pr.html_url)
+    issue = jira.issue(pr.issue_id)
     jira.add_comment(pr.issue_id, comment)
+    jira.transition_issue(issue.key, '31')  # resolve
+
 
 
 @click.group()
