@@ -198,7 +198,6 @@ def merge(no):
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-    # TODO: catch JIRA exception
 
     if not pr.good():
         print("Invalid PR. Possible causes are:")
@@ -222,6 +221,7 @@ def merge(no):
         pr.dump()
         print(f"\n\nFailed to merge PR: {e}", file=sys.stderr)
         return 2
+    # TODO: catch JIRA exception
 
 
 @main.command()
