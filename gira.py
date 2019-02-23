@@ -154,6 +154,12 @@ class Git(object):
             return None, None
         return p.owner, p.repo
 
+    '''get what to cherry pick from master latest commits,
+    assuming that sandbox is pulled and have the latest code'''
+    def get_head_parents(self, branch='master'):
+        head = self.repo.heads[branch]
+        return [p.hexsha for p in head.commit.parents]
+
 
 class MyJira(object):
     def __init__(self, url, user, passwd):
@@ -274,6 +280,7 @@ def web():
 
 @main.command()
 def runtests():
+    _test_git()
     _test_jira()
 
 
@@ -296,6 +303,13 @@ def _test_jira():
     fv = jra.get_fix_versions('CLOUD-4870')
     print(fv)
     jra.list_transitions('TEST-4')
+
+def _test_git():
+    git = Git()
+    picks = git.get_head_parents()
+    if len(picks) != 2:
+        print("Something is wrong, the HEAD is not a merge commit!")
+    print(picks)
 
 
 if __name__ == "__main__":
