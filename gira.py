@@ -161,6 +161,10 @@ class Git(object):
         return [p.hexsha for p in head.commit.parents]
 
 
+class MyJiraError(Exception):
+    pass
+
+
 class MyJira(object):
     def __init__(self, url, user, passwd):
         self.jira = JIRA(_conf["jira"]["url"], auth=(
@@ -174,6 +178,31 @@ class MyJira(object):
     def get_fix_versions(self, issue_id):
         issue = self.jira.issue(issue_id)
         return [fv.name for fv in issue.fields.fixVersions]
+
+    def cherry_pick(self, issue_id, frm, to):
+        'tries to automatically cherry-pick to the correct release branch'
+        fv = self.get_fix_versions(issue_id)
+        branches = []
+        for f in fv:
+            try:
+                # e.g. v1.9.1
+                major, minor, fix = f[1:].split('.')
+            except ValueError as e:
+                print(e)
+                raise MyJiraError(f"Wrongly formatted release version: {f}")
+            if fix == '0':  # this means trunk
+                continue
+            branches.append(f"release-{major}.{minor}")
+        if not branches:
+            return
+        print("1. Run the following commands")
+        print("2. Examine the result")
+        print("3. If everything looks Ok, push!\n")
+        print("git checkout master && git pull")
+        for b in branches:
+            print(f"# Updating release branch {b}...")
+            print(f"git checkout {b}")
+            print(f"git cherry-pick {frm}..{to}")
 
     def list_transitions(self, issue_id):
         jra = JIRA(_conf["jira"]["url"], auth=(
@@ -228,6 +257,16 @@ def merge(no):
         print(f"\n\nFailed to merge PR: {e}", file=sys.stderr)
         return 2
     # TODO: catch JIRA exception
+
+    # this has to be done to make sure that local clone has the latest commit
+    gitee.git.repo.git.checkout("master")
+    gitee.git.repo.git.pull()
+    try:
+        frm, to = gitee.git.get_head_parents()
+    except ValueError:
+        print("Something wrong with HEAD. It's not a merge commit")
+        return 3
+    jira.cherry_pick(pr.issue_id, frm, to)
 
 
 @main.command()
@@ -310,6 +349,8 @@ def _test_git():
     if len(picks) != 2:
         print("Something is wrong, the HEAD is not a merge commit!")
     print(picks)
+    git.repo.git.checkout("master")
+    git.repo.git.pull()
 
 
 if __name__ == "__main__":
