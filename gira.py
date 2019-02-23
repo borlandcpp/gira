@@ -155,34 +155,26 @@ class Git(object):
         return p.owner, p.repo
 
 
-def update_jira(pr):
-    jira = JIRA(_conf["jira"]["url"], auth=(
-        _conf["jira"]["user"], _conf["jira"]["passwd"]))
-    comment = "PR %d signed off by %s and %s.\n%s" % (
-            pr.number, pr.reviwer, pr.tester, pr.html_url)
-    issue = jira.issue(pr.issue_id)
-    jira.add_comment(pr.issue_id, comment)
-    jira.transition_issue(issue.key, '31')  # resolve
+class MyJira(object):
+    def __init__(self, url, user, passwd):
+        self.jira = JIRA(_conf["jira"]["url"], auth=(
+            _conf["jira"]["user"], _conf["jira"]["passwd"]))
 
-    fv = get_fix_versions(pr.issue_id)
-    if fv:
-        print(f"NOTE: fixVersions: {fv}")
-    else:
-        print("Issue has no fixVersion!!!")
+    def update_issue(self, issue_id, comment, transition):
+        issue = self.jira.issue(issue_id)
+        self.jira.add_comment(issue_id, comment)
+        self.jira.transition_issue(issue.key, transition)
 
+    def get_fix_versions(self, issue_id):
+        issue = self.jira.issue(issue_id)
+        return [fv.name for fv in issue.fields.fixVersions]
 
-def get_fix_versions(issue_id):
-    jira = JIRA(_conf["jira"]["url"], auth=(
-        _conf["jira"]["user"], _conf["jira"]["passwd"]))
-    issue = jira.issue(issue_id)
-    return [fv.name for fv in issue.fields.fixVersions]
-
-def list_transitions(issue_id):
-    jira = JIRA(_conf["jira"]["url"], auth=(
-        _conf["jira"]["user"], _conf["jira"]["passwd"]))
-    trs = jira.transitions(issue_id)
-    for tr in trs:
-        print(f"ID: {tr['id']}, Name: {tr['name']}")
+    def list_transitions(self, issue_id):
+        jra = JIRA(_conf["jira"]["url"], auth=(
+            _conf["jira"]["user"], _conf["jira"]["passwd"]))
+        trs = jra.transitions(issue_id)
+        for tr in trs:
+            print(f"ID: {tr['id']}, Name: {tr['name']}")
 
 
 @click.group()
@@ -195,12 +187,18 @@ def main():
 def merge(no):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
+    merged = False
     try:
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
+        jira = MyJira(
+            _conf["jira"]["url"],
+            _conf["jira"]["user"],
+            _conf["jira"]["passwd"])
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    # TODO: catch JIRA exception
 
     if not pr.good():
         print("Invalid PR. Possible causes are:")
@@ -208,13 +206,18 @@ def merge(no):
         print("  2. PR title doesn't start with jira issue ID. e.g. CLOUD-1234")
         print(f"\n{pr.html_url}")
         return 0
-    elif pr.merged():
-        print("Already merged. Nothing to do.")
-        return 0
 
     try:
-        gitee.merge(no)
-        update_jira(pr)
+        if not pr.merged():
+            gitee.merge(no)
+        comment = "PR %d signed off by %s and %s.\n%s" % (
+                pr.number, pr.reviwer, pr.tester, pr.html_url)
+        jira.update_issue(pr.issue_id, comment, '31')  # 31 = resolve
+        fv = jira.get_fix_versions(pr.issue_id)
+        if fv:
+            print(f"NOTE: fixVersions: {fv}")
+        else:
+            print("Issue has no fixVersion!!!")
     except GiteeError as e:
         pr.dump()
         print(f"\n\nFailed to merge PR: {e}", file=sys.stderr)
@@ -288,9 +291,11 @@ def load_conf(*names):
 
 
 def _test_jira():
-    fv = get_fix_versions('CLOUD-4870')
+    jra = MyJira(_conf["jira"]["url"],
+        _conf["jira"]["user"], _conf["jira"]["passwd"])
+    fv = jra.get_fix_versions('CLOUD-4870')
     print(fv)
-    list_transitions('TEST-4')
+    jra.list_transitions('TEST-4')
 
 
 if __name__ == "__main__":
