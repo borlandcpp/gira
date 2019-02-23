@@ -164,6 +164,25 @@ def update_jira(pr):
     jira.add_comment(pr.issue_id, comment)
     jira.transition_issue(issue.key, '31')  # resolve
 
+    fv = get_fix_versions(pr.issue_id)
+    if fv:
+        print(f"NOTE: fixVersions: {fv}")
+    else:
+        print("Issue has no fixVersion!!!")
+
+
+def get_fix_versions(issue_id):
+    jira = JIRA(_conf["jira"]["url"], auth=(
+        _conf["jira"]["user"], _conf["jira"]["passwd"]))
+    issue = jira.issue(issue_id)
+    return [fv.name for fv in issue.fields.fixVersions]
+
+def list_transitions(issue_id):
+    jira = JIRA(_conf["jira"]["url"], auth=(
+        _conf["jira"]["user"], _conf["jira"]["passwd"]))
+    trs = jira.transitions(issue_id)
+    for tr in trs:
+        print(f"ID: {tr['id']}, Name: {tr['name']}")
 
 
 @click.group()
@@ -250,6 +269,11 @@ def web():
         print(e)
 
 
+@main.command()
+def runtests():
+    _test_jira()
+
+
 def load_conf(*names):
     global _conf
     # TODO: should validate config file
@@ -261,6 +285,12 @@ def load_conf(*names):
             f.close()
         except IOError:
             continue
+
+
+def _test_jira():
+    fv = get_fix_versions('CLOUD-4870')
+    print(fv)
+    list_transitions('TEST-4')
 
 
 if __name__ == "__main__":
