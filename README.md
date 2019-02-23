@@ -8,5 +8,6 @@
 
 # Usage
 * prepare `$HOME/.config/gira.toml` with given example
+* `cd` into a gitee project
+* `gira merge 17` will merge PR 17 and update JIRA issue and give instructions for cherry picking
 * `gira --help` inside the git repository
-    * e.g. `gira merge 17` merges PR 17 and update JIRA
