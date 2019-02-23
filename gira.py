@@ -197,7 +197,7 @@ class MyJira(object):
             return
         print("1. Run the following commands")
         print("2. Examine the result")
-        print("3. If everything looks Ok, push!\n")
+        print("3. If everything looks OK, PUSH!\n")
         print("git checkout master && git pull")
         for b in branches:
             print(f"# Updating release branch {b}...")
@@ -264,7 +264,7 @@ def merge(no):
     try:
         frm, to = gitee.git.get_head_parents()
     except ValueError:
-        print("Something wrong with HEAD. It's not a merge commit")
+        print("Something wrong with HEAD. It's not a merge commit.")
         return 3
     jira.cherry_pick(pr.issue_id, frm, to)
 
