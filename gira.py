@@ -184,9 +184,6 @@ class ReleaseVersion(object):
         if self.project:
             self.project = self.project[1:]
 
-    def is_semver(self):
-        return self.is_semver
-
     def __str__(self):
         return self.release
 
@@ -386,12 +383,12 @@ def _test_git():
 
 def _test_release():
     releases = {
-        'Infinity': ('', '', '', ''),
-        'v1': ('', '', '', ''),
-        'v1.3': ('', '', '', ''),
-        'v1.3.3a': ('', '', '', ''),
-        'v1.3.3': ('1', '3', '3', ''),
-        'v1.3.3-foobar': ('1', '3', '3', 'foobar')
+        'Infinity': ('', '', '', '', False),
+        'v1': ('', '', '', '', False),
+        'v1.3': ('', '', '', '', False),
+        'v1.3.3a': ('', '', '', '', False),
+        'v1.3.3': ('1', '3', '3', '', True),
+        'v1.3.3-foobar': ('1', '3', '3', 'foobar', True)
     }
     for rel in releases:
         r = ReleaseVersion(rel)
@@ -399,7 +396,8 @@ def _test_release():
         if r.major == exp[0] and \
                 r.minor == exp[1] and \
                 r.fix == exp[2] and \
-                r.project == exp[3]:
+                r.project == exp[3] and \
+                r.is_semver == exp[4]:
             print("OK")
         else:
             print(f"NOK {rel}")
