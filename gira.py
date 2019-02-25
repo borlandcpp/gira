@@ -161,6 +161,36 @@ class Git(object):
         return [p.hexsha for p in head.commit.parents]
 
 
+class ReleaseVersion(object):
+    def __init__(self, rel):
+        self.release = rel
+        self.is_semver = True
+        self.major = ''
+        self.minor = ''
+        self.fix = ''
+        self.project = ''
+        self._parse_release(rel)
+
+    def _parse_release(self, rel):
+        pat = re.compile("^v(\d+)\.(\d+)\.(\d+)(-[a-zA-Z0-9]+)?$")
+        mobj = re.match(pat, rel)
+        if not mobj:
+            self.is_semver = False
+            return
+        self.major = mobj.group(1)
+        self.minor = mobj.group(2)
+        self.fix = mobj.group(3)
+        self.project = mobj.group(4) or ''
+        if self.project:
+            self.project = self.project[1:]
+
+    def is_semver(self):
+        return self.is_semver
+
+    def __str__(self):
+        return self.release
+
+
 class MyJiraError(Exception):
     pass
 
@@ -321,6 +351,7 @@ def web():
 def runtests():
     _test_git()
     _test_jira()
+    _test_release()
 
 
 def load_conf(*names):
@@ -351,6 +382,28 @@ def _test_git():
     print(picks)
     git.repo.git.checkout("master")
     git.repo.git.pull()
+
+
+def _test_release():
+    releases = {
+        'Infinity': ('', '', '', ''),
+        'v1': ('', '', '', ''),
+        'v1.3': ('', '', '', ''),
+        'v1.3.3a': ('', '', '', ''),
+        'v1.3.3': ('1', '3', '3', ''),
+        'v1.3.3-foobar': ('1', '3', '3', 'foobar')
+    }
+    for rel in releases:
+        r = ReleaseVersion(rel)
+        exp = releases[rel]
+        if r.major == exp[0] and \
+                r.minor == exp[1] and \
+                r.fix == exp[2] and \
+                r.project == exp[3]:
+            print("OK")
+        else:
+            print(f"NOK {rel}")
+            print(f"{r.major}.{r.minor}.{r.fix}-{r.project}")
 
 
 if __name__ == "__main__":
