@@ -206,6 +206,10 @@ class MyJira(object):
         issue = self.jira.issue(issue_id)
         return [fv.name for fv in issue.fields.fixVersions]
 
+    def get_issue_status(self, issue_id):
+        issue = self.jira.issue(issue_id)
+        return issue.fields.status.name
+
     def cherry_pick(self, issue_id, frm, to):
         'tries to automatically cherry-pick to the correct release branch'
         fv = self.get_fix_versions(issue_id)
@@ -244,6 +248,38 @@ def main():
     pass
 
 
+def _good_jira_issue(jira, issue_id):
+    vers = jira.get_fix_versions(issue_id)
+    if len(vers) == 0:
+        print("Invalid Jira issue: no fixVersion")
+        return False
+    at_least_one_trunk = False
+    for v in vers:
+        rel = ReleaseVersion(v)
+        if rel.is_semver and rel.fix == '0':
+            at_least_one_trunk = True
+            break
+    if not at_least_one_trunk:
+        print("Jira issue not assigned to trunk. Not sure what to do.")
+        return False
+    st = jira.get_issue_status(issue_id)
+    if st == "Resolved" or st == "Closed":
+        print("Jira issue already Resolved or Closed. Refuse to continue.")
+        return False
+    return True
+
+
+def all_is_well(gitee, pr, jira):
+    if not pr.good():
+        print("Invalid PR. Possible causes are:")
+        print("  1. PR not assigned to both reviwer and tester.")
+        print("  2. PR title doesn't start with jira issue ID. e.g. CLOUD-1234")
+        print(f"\n{pr.html_url}")
+        return False
+
+    return _good_jira_issue(jira, pr.issue_id)
+
+
 @main.command()
 @click.argument('no')
 def merge(no):
@@ -261,11 +297,7 @@ def merge(no):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    if not pr.good():
-        print("Invalid PR. Possible causes are:")
-        print("  1. PR not assigned to both reviwer and tester.")
-        print("  2. PR title doesn't start with jira issue ID. e.g. CLOUD-1234")
-        print(f"\n{pr.html_url}")
+    if not all_is_well(gitee, pr, jira):
         return 0
 
     try:
@@ -370,6 +402,13 @@ def _test_jira():
     fv = jra.get_fix_versions('CLOUD-4870')
     print(fv)
     jra.list_transitions('TEST-4')
+    st = jra.get_issue_status('CLOUD-4414')
+    if st != "Closed":
+        print("XXX: Wrong issue status")
+    if _good_jira_issue(jra, "TEST-4"):  # No fix version
+        print("XXX:Should have no fixVersion")
+    if not _good_jira_issue(jra, "CLOUD-5046"):  # good fix version
+        print("XXX: Should be good")
 
 def _test_git():
     git = Git()
