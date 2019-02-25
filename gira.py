@@ -211,17 +211,17 @@ class MyJira(object):
         fv = self.get_fix_versions(issue_id)
         branches = []
         for f in fv:
-            try:
-                # e.g. v1.9.1
-                major, minor, fix = f[1:].split('.')
-            except ValueError as e:
-                print(e)
-                raise MyJiraError(f"Wrongly formatted release version: {f}")
-            if fix == '0':  # this means trunk
+            rv = ReleaseVersion(f)
+            if not rv.is_semver or rv.fix == '0':  # '0' means trunk
+                print(f"fixVersions {rv} ignored")
                 continue
-            branches.append(f"release-{major}.{minor}")
+            rel = f"release-{rv.major}.{rv.minor}"
+            if rv.project:
+                rel += f"-{rv.project}"
+            branches.append(rel)
         if not branches:
             return
+        print()
         print("1. Run the following commands")
         print("2. Examine the result")
         print("3. If everything looks OK, PUSH!\n")
@@ -276,7 +276,7 @@ def merge(no):
         jira.update_issue(pr.issue_id, comment, '31')  # 31 = resolve
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
-            print(f"NOTE: fixVersions: {fv}")
+            print(f"fixVersions: {', '.join(fv)}")
         else:
             print("Issue has no fixVersion!!!")
     except GiteeError as e:
