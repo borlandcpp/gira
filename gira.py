@@ -113,6 +113,10 @@ class Gitee(object):
     def print_user(self, u):
         print(f"{u['name']}: {u['type']}")
 
+    def print_branch(self, br):
+        prot = ', protected' if br['protected'] else ''
+        print(f"{br['name']}{prot}")
+
 
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
@@ -354,30 +358,45 @@ def lockbr(branch):
     except Exception as e:
         print(e)
 
-@main.command()
-def lsbr():
+def show_branches(full):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
         gitee = Gitee(user, token)
         res = gitee.list_branch()
-        print(res.text)
+        if full:
+            print(res.text)
+            return
+        for br in json.loads(res.text):
+            gitee.print_branch(br)
     except Exception as e:
         print(e)
 
 
-@main.command()
-def team():
+def show_team(full):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
         gitee = Gitee(user, token)
         res = gitee.list_member()
-        # print(res.text)
+        if full:
+            print(res.text)
+            return
         for u in json.loads(res.text):
             gitee.print_user(u)
     except Exception as e:
         print(e)
+
+@main.command()
+@click.option('--full/--no-full', default=False, help='Display full JSON.')
+@click.argument('what')
+def show(full, what):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    if what == 'branch':
+        show_branches(full)
+    elif what == 'team':
+        show_team(full)
 
 
 @main.command()
