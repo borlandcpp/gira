@@ -83,6 +83,12 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
+    def list_branch(self):
+        res = self.get(("branches", ), {})
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+        return res
+
     def add_user(self, username, permission='push'):
         if not self._good_perm(permission):
             raise ValueError("invalid permission: {permission}")
@@ -336,6 +342,17 @@ def lockbr(branch):
     try:
         gitee = Gitee(user, token)
         gitee.lock_branch(branch)
+    except Exception as e:
+        print(e)
+
+@main.command()
+def lsbr():
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        res = gitee.list_branch()
+        print(res.text)
     except Exception as e:
         print(e)
 
