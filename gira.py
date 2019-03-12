@@ -110,6 +110,9 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
+    def print_user(self, u):
+        print(f"{u['name']}: {u['type']}")
+
 
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
@@ -370,7 +373,9 @@ def team():
     try:
         gitee = Gitee(user, token)
         res = gitee.list_member()
-        print(res.text)
+        # print(res.text)
+        for u in json.loads(res.text):
+            gitee.print_user(u)
     except Exception as e:
         print(e)
 
