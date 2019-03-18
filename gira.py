@@ -251,7 +251,7 @@ class MyJira(object):
         print("git checkout master && git pull")
         for b in branches:
             print(f"# Updating release branch {b}...")
-            print(f"git checkout {b}")
+            print(f"git checkout {b} && git pull")
             print(f"git cherry-pick {frm}..{to}")
 
     def list_transitions(self, issue_id):
