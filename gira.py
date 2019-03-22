@@ -95,6 +95,12 @@ class Gitee(object):
             raise GiteeError(res.text)
         return res
 
+    def list_prs(self):
+        res = self.get(("pulls", ), {})
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+        return res
+
     def add_user(self, username, permission='push'):
         if not self._good_perm(permission):
             raise ValueError("invalid permission: {permission}")
@@ -117,6 +123,8 @@ class Gitee(object):
         prot = ', protected' if br['protected'] else ''
         print(f"{br['name']}{prot}")
 
+    def print_prs(self, pr):
+        print(f"{pr['number']}: {pr['title']}")
 
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
@@ -387,6 +395,22 @@ def show_team(full):
     except Exception as e:
         print(e)
 
+
+def show_prs(full):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        res = gitee.list_prs()
+        if full:
+            print(res.text)
+            return
+        for pr in json.loads(res.text):
+            gitee.print_prs(pr)
+    except Exception as e:
+        print(e)
+
+
 @main.command()
 @click.option('--full/--no-full', default=False, help='Display full JSON.')
 @click.argument('what')
@@ -397,6 +421,8 @@ def show(full, what):
         show_branches(full)
     elif what == 'team':
         show_team(full)
+    elif what == 'pr':
+        show_prs(full)
 
 
 @main.command()
