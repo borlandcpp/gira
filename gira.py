@@ -117,7 +117,8 @@ class Gitee(object):
             raise GiteeError(res.text)
 
     def print_user(self, u):
-        print(f"{u['name']}: {u['type']}")
+        adm = "\tadmin" if u['permissions']['admin'] else ""
+        print(f"{u['name']} ({u['login']}){adm}")
 
     def print_branch(self, br):
         prot = ', protected' if br['protected'] else ''
