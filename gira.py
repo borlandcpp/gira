@@ -24,7 +24,7 @@ class GiteeError(Exception):
 class Gitee(object):
     api_root = "https://gitee.com/api/v5/repos/{}/{}"
     web_root = "https://www.gitee.com/"
-    allowed_permissions = ('push', 'pull', 'admin')
+    allowed_permissions = ("push", "pull", "admin")
 
     def __init__(self, user, token):
         self.user = user
@@ -38,11 +38,13 @@ class Gitee(object):
 
     def _url(self, urls, params):
         if params is not None:  # this is for GET
-            params['access_token'] = self.token
-            return os.path.join(self._root, *urls) + '?' + urllib.parse.urlencode(params)
+            params["access_token"] = self.token
+            return (
+                os.path.join(self._root, *urls) + "?" + urllib.parse.urlencode(params)
+            )
         else:  # for PUT and POST
             return os.path.join(self._root, *urls)
-        
+
     def _good_perm(self, perm):
         return perm in Gitee.allowed_permissions
 
@@ -50,11 +52,7 @@ class Gitee(object):
         return requests.get(self._url(url, params))
 
     def put(self, url, _data):
-        d = {
-            "access_token": self.token,
-            "owner": self.owner,
-            "repo": self.repo
-        }
+        d = {"access_token": self.token, "owner": self.owner, "repo": self.repo}
         d.update(_data)
         return requests.put(url, data=d)
 
@@ -68,45 +66,40 @@ class Gitee(object):
         return res.text
 
     def merge(self, pr):
-        res = self.put(
-            self._url(("pulls", pr, "merge"), None),
-            { "number": pr }
-        )
+        res = self.put(self._url(("pulls", pr, "merge"), None), {"number": pr})
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
     def lock_branch(self, branch):
         res = self.put(
-            self._url(("branches", branch, "protection"), None),
-            { "branch": branch }
+            self._url(("branches", branch, "protection"), None), {"branch": branch}
         )
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
     def list_branch(self):
-        res = self.get(("branches", ), {})
+        res = self.get(("branches",), {})
         if not res.status_code == 200:
             raise GiteeError(res.text)
         return res
 
     def list_member(self):
-        res = self.get(("collaborators", ), {})
+        res = self.get(("collaborators",), {})
         if not res.status_code == 200:
             raise GiteeError(res.text)
         return res
 
     def list_prs(self):
-        res = self.get(("pulls", ), {})
+        res = self.get(("pulls",), {})
         if not res.status_code == 200:
             raise GiteeError(res.text)
         return res
 
-    def add_user(self, username, permission='push'):
+    def add_user(self, username, permission="push"):
         if not self._good_perm(permission):
             raise ValueError("invalid permission: {permission}")
         res = self.put(
-            self._url(("collaborators", username), None),
-            { "permission": permission }
+            self._url(("collaborators", username), None), {"permission": permission}
         )
         if not res.status_code == 200:
             raise GiteeError(res.text)
@@ -117,11 +110,11 @@ class Gitee(object):
             raise GiteeError(res.text)
 
     def print_user(self, u):
-        adm = "\tadmin" if u['permissions']['admin'] else ""
+        adm = "\tadmin" if u["permissions"]["admin"] else ""
         print(f"{u['name']} ({u['login']}){adm}")
 
     def print_branch(self, br):
-        prot = ', protected' if br['protected'] else ''
+        prot = ", protected" if br["protected"] else ""
         print(f"{br['name']}{prot}")
 
     def print_prs(self, pr):
@@ -130,7 +123,7 @@ class Gitee(object):
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
         subprocess.run(["open", url])
-        
+
 
 class PR(object):
     def __init__(self, jsn):
@@ -140,11 +133,10 @@ class PR(object):
 
     def good(self):
         try:
-            _ =  self.issue_id  # make sure it's valid
+            _ = self.issue_id  # make sure it's valid
         except ValueError:
             return False
-        return len(self.data["assignees"]) >= 1 and \
-               len(self.data["testers"]) >= 1
+        return len(self.data["assignees"]) >= 1 and len(self.data["testers"]) >= 1
 
     def merged(self):
         return self.data["state"] == "merged"
@@ -182,9 +174,10 @@ class Git(object):
             return None, None
         return p.owner, p.repo
 
-    '''get what to cherry pick from master latest commits,
-    assuming that sandbox is pulled and have the latest code'''
-    def get_head_parents(self, branch='master'):
+    """get what to cherry pick from master latest commits,
+    assuming that sandbox is pulled and have the latest code"""
+
+    def get_head_parents(self, branch="master"):
         head = self.repo.heads[branch]
         return [p.hexsha for p in head.commit.parents]
 
@@ -193,10 +186,10 @@ class ReleaseVersion(object):
     def __init__(self, rel):
         self.release = rel
         self.is_semver = True
-        self.major = ''
-        self.minor = ''
-        self.fix = ''
-        self.project = ''
+        self.major = ""
+        self.minor = ""
+        self.fix = ""
+        self.project = ""
         self._parse_release(rel)
 
     def _parse_release(self, rel):
@@ -208,7 +201,7 @@ class ReleaseVersion(object):
         self.major = mobj.group(1)
         self.minor = mobj.group(2)
         self.fix = mobj.group(3)
-        self.project = mobj.group(4) or ''
+        self.project = mobj.group(4) or ""
         if self.project:
             self.project = self.project[1:]
 
@@ -222,8 +215,9 @@ class MyJiraError(Exception):
 
 class MyJira(object):
     def __init__(self, url, user, passwd):
-        self.jira = JIRA(_conf["jira"]["url"], auth=(
-            _conf["jira"]["user"], _conf["jira"]["passwd"]))
+        self.jira = JIRA(
+            _conf["jira"]["url"], auth=(_conf["jira"]["user"], _conf["jira"]["passwd"])
+        )
 
     def update_issue(self, issue_id, comment, transition):
         issue = self.jira.issue(issue_id)
@@ -239,12 +233,12 @@ class MyJira(object):
         return issue.fields.status.name
 
     def cherry_pick(self, issue_id, frm, to):
-        'tries to automatically cherry-pick to the correct release branch'
+        "tries to automatically cherry-pick to the correct release branch"
         fv = self.get_fix_versions(issue_id)
         branches = []
         for f in fv:
             rv = ReleaseVersion(f)
-            if not rv.is_semver or rv.fix == '0':  # '0' means trunk
+            if not rv.is_semver or rv.fix == "0":  # '0' means trunk
                 print(f"fixVersions {rv} ignored")
                 continue
             rel = f"release-{rv.major}.{rv.minor}"
@@ -264,8 +258,9 @@ class MyJira(object):
             print(f"git cherry-pick {frm}..{to}")
 
     def list_transitions(self, issue_id):
-        jra = JIRA(_conf["jira"]["url"], auth=(
-            _conf["jira"]["user"], _conf["jira"]["passwd"]))
+        jra = JIRA(
+            _conf["jira"]["url"], auth=(_conf["jira"]["user"], _conf["jira"]["passwd"])
+        )
         trs = jra.transitions(issue_id)
         for tr in trs:
             print(f"ID: {tr['id']}, Name: {tr['name']}")
@@ -296,7 +291,7 @@ def _good_jira_issue(jira, issue_id, force=False):
         if not rel.is_semver:
             print("{rel} is not semver. Giving up")
             return False
-        if rel.fix == '0':  # 1
+        if rel.fix == "0":  # 1
             trunk += 1
         elif rel.project:  # 3
             proj_fix += 1
@@ -327,8 +322,12 @@ def all_is_well(gitee, pr, jira, force):
 
 
 @main.command()
-@click.argument('no')
-@click.option('--force', default=False, help='Force merging of PR. Useful for project specific changes.')
+@click.argument("no")
+@click.option(
+    "--force",
+    default=False,
+    help="Force merging of PR. Useful for project specific changes.",
+)
 def merge(no, force):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -337,9 +336,8 @@ def merge(no, force):
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
         jira = MyJira(
-            _conf["jira"]["url"],
-            _conf["jira"]["user"],
-            _conf["jira"]["passwd"])
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -351,8 +349,12 @@ def merge(no, force):
         if not pr.merged():
             gitee.merge(no)
         comment = "PR %d signed off by %s and %s.\n%s" % (
-                pr.number, pr.reviwer, pr.tester, pr.html_url)
-        jira.update_issue(pr.issue_id, comment, '31')  # 31 = resolve
+            pr.number,
+            pr.reviwer,
+            pr.tester,
+            pr.html_url,
+        )
+        jira.update_issue(pr.issue_id, comment, "31")  # 31 = resolve
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
             print(f"fixVersions: {', '.join(fv)}")
@@ -376,7 +378,7 @@ def merge(no, force):
 
 
 @main.command()
-@click.argument('branch')
+@click.argument("branch")
 def lockbr(branch):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -385,6 +387,7 @@ def lockbr(branch):
         gitee.lock_branch(branch)
     except Exception as e:
         print(e)
+
 
 def show_branches(full):
     user = _conf["gitee"]["user"]
@@ -432,22 +435,22 @@ def show_prs(full):
 
 
 @main.command()
-@click.option('--full/--no-full', default=False, help='Display full JSON.')
-@click.argument('what')
+@click.option("--full/--no-full", default=False, help="Display full JSON.")
+@click.argument("what")
 def show(full, what):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
-    if what == 'branch':
+    if what == "branch":
         show_branches(full)
-    elif what == 'team':
+    elif what == "team":
         show_team(full)
-    elif what == 'pr':
+    elif what == "pr":
         show_prs(full)
 
 
 @main.command()
-@click.argument('user')
-@click.argument('permission', default='push')
+@click.argument("user")
+@click.argument("permission", default="push")
 def adduser(user, permission):
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -459,7 +462,7 @@ def adduser(user, permission):
 
 
 @main.command()
-@click.argument('user')
+@click.argument("user")
 def deluser(user):
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -502,12 +505,11 @@ def load_conf(*names):
 
 
 def _test_jira():
-    jra = MyJira(_conf["jira"]["url"],
-        _conf["jira"]["user"], _conf["jira"]["passwd"])
-    fv = jra.get_fix_versions('CLOUD-4870')
+    jra = MyJira(_conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"])
+    fv = jra.get_fix_versions("CLOUD-4870")
     print(fv)
-    jra.list_transitions('TEST-4')
-    st = jra.get_issue_status('CLOUD-4414')
+    jra.list_transitions("TEST-4")
+    st = jra.get_issue_status("CLOUD-4414")
     if st != "Closed":
         print("XXX: Wrong issue status")
     if _good_jira_issue(jra, "TEST-4"):  # No fix version
@@ -525,6 +527,7 @@ def _test_jira():
     if not _good_jira_issue(jra, "CLOUD-5449", force=True):  # project only
         print("XXX: Should allow force merge of project only PR")
 
+
 def _test_git():
     git = Git()
     picks = git.get_head_parents()
@@ -537,21 +540,23 @@ def _test_git():
 
 def _test_release():
     releases = {
-        'Infinity': ('', '', '', '', False),
-        'v1': ('', '', '', '', False),
-        'v1.3': ('', '', '', '', False),
-        'v1.3.3a': ('', '', '', '', False),
-        'v1.3.3': ('1', '3', '3', '', True),
-        'v1.3.3-foobar': ('1', '3', '3', 'foobar', True)
+        "Infinity": ("", "", "", "", False),
+        "v1": ("", "", "", "", False),
+        "v1.3": ("", "", "", "", False),
+        "v1.3.3a": ("", "", "", "", False),
+        "v1.3.3": ("1", "3", "3", "", True),
+        "v1.3.3-foobar": ("1", "3", "3", "foobar", True),
     }
     for rel in releases:
         r = ReleaseVersion(rel)
         exp = releases[rel]
-        if r.major == exp[0] and \
-                r.minor == exp[1] and \
-                r.fix == exp[2] and \
-                r.project == exp[3] and \
-                r.is_semver == exp[4]:
+        if (
+            r.major == exp[0]
+            and r.minor == exp[1]
+            and r.fix == exp[2]
+            and r.project == exp[3]
+            and r.is_semver == exp[4]
+        ):
             print("OK")
         else:
             print(f"NOK {rel}")
@@ -559,9 +564,11 @@ def _test_release():
 
 
 if __name__ == "__main__":
-    load_conf(os.path.join(os.environ["HOME"], "gira.toml"),
-            os.path.join(os.environ["HOME"], ".config/gira.toml"),
-            "gira.toml")
+    load_conf(
+        os.path.join(os.environ["HOME"], "gira.toml"),
+        os.path.join(os.environ["HOME"], ".config/gira.toml"),
+        "gira.toml",
+    )
     if _conf is None:
         print("Failed to load config file.")
         sys.exit(1)
