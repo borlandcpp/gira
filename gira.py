@@ -276,28 +276,46 @@ def main():
     pass
 
 
-def _good_jira_issue(jira, issue_id):
+def _good_jira_issue(jira, issue_id, force=False):
+    st = jira.get_issue_status(issue_id)
+    if st == "Resolved" or st == "Closed":
+        print("Jira issue already Resolved or Closed. Giving up.")
+        return False
     vers = jira.get_fix_versions(issue_id)
     if len(vers) == 0:
         print("Invalid Jira issue: no fixVersion")
         return False
-    at_least_one_trunk = False
+
+    # fixVersion can be:
+    # 1. x.y.0 for trunk
+    # 2. x.y.z for product bug fix
+    # 3. x.y.z-proj for project bug fix
+    trunk = bug_fix = proj_fix = 0
     for v in vers:
         rel = ReleaseVersion(v)
-        if rel.is_semver and rel.fix == '0':
-            at_least_one_trunk = True
-            break
-    if not at_least_one_trunk:
-        print("Jira issue not assigned to trunk. Not sure what to do.")
+        if not rel.is_semver:
+            print("{rel} is not semver. Giving up")
+            return False
+        if rel.fix == '0':  # 1
+            trunk += 1
+        elif rel.project:  # 3
+            proj_fix += 1
+        else:  # has to be 2
+            bug_fix += 1
+
+    if trunk > 1:
+        print("Jira issue assigned assigned to multiple major version. Giving up.")
         return False
-    st = jira.get_issue_status(issue_id)
-    if st == "Resolved" or st == "Closed":
-        print("Jira issue already Resolved or Closed. Refuse to continue.")
+    if not trunk and bug_fix:
+        print("Bug fixes has to go to master. Giving up.")
+        return False
+    if not trunk and proj_fix and not force:
+        print("Bug fixes has to go to master. Giving up.")
         return False
     return True
 
 
-def all_is_well(gitee, pr, jira):
+def all_is_well(gitee, pr, jira, force):
     if not pr.good():
         print("Invalid PR. Possible causes are:")
         print("  1. PR not assigned to both reviwer and tester.")
@@ -305,12 +323,13 @@ def all_is_well(gitee, pr, jira):
         print(f"\n{pr.html_url}")
         return False
 
-    return _good_jira_issue(jira, pr.issue_id)
+    return _good_jira_issue(jira, pr.issue_id, force)
 
 
 @main.command()
 @click.argument('no')
-def merge(no):
+@click.option('--force', default=False, help='Force merging of PR. Useful for project specific changes.')
+def merge(no, force):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     merged = False
@@ -325,7 +344,7 @@ def merge(no):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    if not all_is_well(gitee, pr, jira):
+    if not all_is_well(gitee, pr, jira, force):
         return 0
 
     try:
@@ -493,8 +512,18 @@ def _test_jira():
         print("XXX: Wrong issue status")
     if _good_jira_issue(jra, "TEST-4"):  # No fix version
         print("XXX:Should have no fixVersion")
-    if not _good_jira_issue(jra, "CLOUD-5046"):  # good fix version
+    if not _good_jira_issue(jra, "CLOUD-5447"):  # good fix version
         print("XXX: Should be good")
+    if _good_jira_issue(jra, "CLOUD-5446"):
+        print("XXX: Should not have more than one master")
+    if _good_jira_issue(jra, "CLOUD-5448"):  # no trunk
+        print("XXX: Should have a master release")
+    if _good_jira_issue(jra, "CLOUD-5448", force=True):  # no trunk
+        print("XXX: Should have a master release")
+    if _good_jira_issue(jra, "CLOUD-5449"):  # project only
+        print("XXX: Should have a master release")
+    if not _good_jira_issue(jra, "CLOUD-5449", force=True):  # project only
+        print("XXX: Should allow force merge of project only PR")
 
 def _test_git():
     git = Git()
