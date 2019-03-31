@@ -289,8 +289,8 @@ def _good_jira_issue(jira, issue_id, force=False):
     for v in vers:
         rel = ReleaseVersion(v)
         if not rel.is_semver:
-            print("{rel} is not semver. Giving up")
-            return False
+            print(f"{rel} is not semver. Skipped.")
+            continue
         if rel.fix == "0":  # 1
             trunk += 1
         elif rel.project:  # 3
@@ -526,6 +526,8 @@ def _test_jira():
         print("XXX: Should have a master release")
     if not _good_jira_issue(jra, "CLOUD-5449", force=True):  # project only
         print("XXX: Should allow force merge of project only PR")
+    if not _good_jira_issue(jra, "CLOUD-5450"):  # non-semver
+        print("XXX: Should allow non-semver fixVersion")
 
 
 def _test_git():
