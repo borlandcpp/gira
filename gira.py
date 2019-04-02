@@ -323,7 +323,7 @@ def all_is_well(gitee, pr, jira, force):
 
 @main.command()
 @click.option(
-    "--force",
+    "--force/--no-force",
     default=False,
     help="Force merging of PR. Useful for project specific changes.",
 )
