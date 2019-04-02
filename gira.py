@@ -322,16 +322,15 @@ def all_is_well(gitee, pr, jira, force):
 
 
 @main.command()
-@click.argument("no")
 @click.option(
     "--force",
     default=False,
     help="Force merging of PR. Useful for project specific changes.",
 )
+@click.argument("no")
 def merge(no, force):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
-    merged = False
     try:
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
@@ -438,8 +437,6 @@ def show_prs(full):
 @click.option("--full/--no-full", default=False, help="Display full JSON.")
 @click.argument("what")
 def show(full, what):
-    user = _conf["gitee"]["user"]
-    token = _conf["gitee"]["token"]
     if what == "branch":
         show_branches(full)
     elif what == "team":
