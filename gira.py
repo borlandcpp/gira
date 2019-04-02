@@ -365,15 +365,16 @@ def merge(no, force):
         return 2
     # TODO: catch JIRA exception
 
-    # this has to be done to make sure that local clone has the latest commit
-    gitee.git.repo.git.checkout("master")
-    gitee.git.repo.git.pull()
-    try:
-        frm, to = gitee.git.get_head_parents()
-    except ValueError:
-        print("Something wrong with HEAD. It's not a merge commit.")
-        return 3
-    jira.cherry_pick(pr.issue_id, frm, to)
+    if not force:  # FIXME: this is leaky but let's assume it's OK
+        # this has to be done to make sure that local clone has the latest commit
+        gitee.git.repo.git.checkout("master")
+        gitee.git.repo.git.pull()
+        try:
+            frm, to = gitee.git.get_head_parents()
+        except ValueError:
+            print("Something wrong with HEAD. It's not a merge commit.")
+            return 3
+        jira.cherry_pick(pr.issue_id, frm, to)
 
 
 @main.command()
