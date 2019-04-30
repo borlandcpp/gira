@@ -274,7 +274,7 @@ def main():
 def _good_jira_issue(jira, issue_id, force=False):
     st = jira.get_issue_status(issue_id)
     if st == "Resolved" or st == "Closed":
-        print("Jira issue already Resolved or Closed. Giving up.")
+        print("Jira issue {0} already Resolved or Closed. Giving up.".format(issue_id))
         return False
     vers = jira.get_fix_versions(issue_id)
     if len(vers) == 0:
