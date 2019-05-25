@@ -145,7 +145,7 @@ class PR(object):
         print(self.raw)
 
     def _get_jira_issue_id(self):
-        pat = re.compile("^([A-Z]*-\d*)")
+        pat = re.compile("^\s*([A-Z]*-\d*)\s+")
         mo = re.match(pat, self.title)
         if not mo:
             raise ValueError(f"Invalid PR title: {self.title}")
@@ -487,6 +487,7 @@ def runtests():
     _test_git()
     _test_jira()
     _test_release()
+    _test_gitee()
 
 
 def load_conf(*names):
@@ -536,6 +537,15 @@ def _test_git():
     print(picks)
     git.repo.git.checkout("master")
     git.repo.git.pull()
+
+
+def _test_gitee():
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    gitee = Gitee(user, token)
+    pr = PR(gitee.get_pr("25"))
+    if pr.issue_id != "TEST-4":
+        print("XXX: Should allow non-semver fixVersion")
 
 
 def _test_release():
