@@ -436,7 +436,7 @@ def show_prs(full):
 
 @main.command()
 @click.option("--full/--no-full", default=False, help="Display full JSON.")
-@click.argument("what")
+@click.argument("what (branch, team, pr)")
 def show(full, what):
     if what == "branch":
         show_branches(full)
