@@ -344,6 +344,10 @@ def merge(no, force):
     if not all_is_well(gitee, pr, jira, force):
         return 0
 
+    if pr.head == "master" and force:
+        print("'force' only allowed for project specific bug fixes. Giving up.")
+        return 4
+
     try:
         if not pr.merged():
             gitee.merge(no)
@@ -512,7 +516,7 @@ def _test_jira():
     if st != "Closed":
         print("XXX: Wrong issue status")
     if _good_jira_issue(jra, "TEST-4"):  # No fix version
-        print("XXX:Should have no fixVersion")
+        print("XXX: Should have no fixVersion")
     if not _good_jira_issue(jra, "CLOUD-5447"):  # good fix version
         print("XXX: Should be good")
     if _good_jira_issue(jra, "CLOUD-5446"):
