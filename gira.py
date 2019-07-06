@@ -265,6 +265,14 @@ class MyJira(object):
         for tr in trs:
             print(f"ID: {tr['id']}, Name: {tr['name']}")
 
+    def _get_field(self, issue_id, field):
+        isu = self.jira.issue(issue_id)
+        return getattr(isu.fields, field)
+
+    def get_summary(self, issue_id):
+        return self._get_field(issue_id, "summary")
+    
+
 
 @click.group()
 def main():
@@ -511,6 +519,8 @@ def _test_jira():
     jra = MyJira(_conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"])
     fv = jra.get_fix_versions("CLOUD-4870")
     print(fv)
+    if jra.get_summary("CLOUD-4870") != "160部署程序缺少docker load":
+        print("XXX: wrong issue title")
     jra.list_transitions("TEST-4")
     st = jra.get_issue_status("CLOUD-4414")
     if st != "Closed":
