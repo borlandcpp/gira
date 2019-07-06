@@ -17,5 +17,5 @@
 * Allow manipulation of jira issue
 * All related party has to say OK. There seems to be a bug with gitee
 * Should stop when git command fails
-* Show jira title
 * Default to auto cherry-pick
+* Automatically add Jira link when PR is created
