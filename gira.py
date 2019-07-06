@@ -124,6 +124,10 @@ class Gitee(object):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
         subprocess.run(["open", url])
 
+    def goto_pull(self, id):
+        url = os.path.join(Gitee.web_root, self.owner, self.repo, "pulls", id)
+        subprocess.run(["open", url])
+
 
 class PR(object):
     def __init__(self, jsn):
@@ -492,6 +496,25 @@ def web():
         gitee.goto_web()
     except Exception as e:
         print(e)
+
+
+@main.command()
+@click.argument("no")
+def review(no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        pr = PR(gitee.get_pr(no))
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+    except GiteeError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    print(f"Reviewing PR for:\t{jira.get_summary(pr.issue_id)}")
+    gitee.goto_pull(no)
 
 
 @main.command()
