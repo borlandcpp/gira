@@ -11,3 +11,11 @@
 * `cd` into a gitee project
 * `gira merge 17` will merge PR 17 and update JIRA issue and give instructions for cherry picking
 * `gira --help` inside the git repository
+
+
+# TODO
+* Allow manipulation of jira issue
+* All related party has to say OK. There seems to be a bug with gitee
+* Should stop when git command fails
+* Show jira title
+* Default to auto cherry-pick
