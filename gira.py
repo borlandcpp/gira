@@ -275,7 +275,6 @@ class MyJira(object):
 
     def get_summary(self, issue_id):
         return self._get_field(issue_id, "summary")
-    
 
 
 @click.group()
@@ -451,7 +450,11 @@ def show_prs(full):
 
 
 @main.command()
-@click.option("--full/--no-full", default=False, help="Display full JSON. what can be <branch, team, pr>")
+@click.option(
+    "--full/--no-full",
+    default=False,
+    help="Display full JSON. what can be <branch, team, pr>",
+)
 @click.argument("what")
 def show(full, what):
     if what == "branch":
