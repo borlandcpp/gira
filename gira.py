@@ -236,6 +236,14 @@ class MyJira(object):
         issue = self.jira.issue(issue_id)
         return issue.fields.status.name
 
+    def trunk_required(self, issue_id):
+        fv = self.get_fix_versions(issue_id)
+        for f in fv:
+            rv = ReleaseVersion(f)
+            if rv.fix == "0":  # '0' means trunk
+                return True
+        return False
+
     def cherry_pick(self, issue_id, frm, to):
         "tries to automatically cherry-pick to the correct release branch"
         fv = self.get_fix_versions(issue_id)
@@ -358,6 +366,11 @@ def merge(no, force):
     if pr.head == "master" and force:
         print("'force' only allowed for project specific bug fixes. Giving up.")
         return 4
+
+    if pr.head != "master" and jira.trunk_required(pr.issue_id):
+        print("Jira fix version includes trunk but only merging to branch.")
+        print("Perhaps you should split the Jira issue. Giving up.")
+        return 5
 
     try:
         if not pr.merged():
@@ -567,6 +580,8 @@ def _test_jira():
         print("XXX: Should allow force merge of project only PR")
     if not _good_jira_issue(jra, "CLOUD-5450"):  # non-semver
         print("XXX: Should allow non-semver fixVersion")
+    if not jra.trunk_required("CLOUD-5450"):
+        print("XXX: issue requires trunk")
 
 
 def _test_git():
