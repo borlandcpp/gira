@@ -334,6 +334,7 @@ def all_is_well(gitee, pr, jira, force):
         print("Invalid PR. Possible causes are:")
         print("  1. PR not assigned to both reviwer and tester.")
         print("  2. PR title doesn't start with jira issue ID. e.g. CLOUD-1234")
+        print("  3. PR title doesn't have summary.")
         print(f"\n{pr.html_url}")
         return False
 
