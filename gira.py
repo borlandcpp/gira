@@ -16,6 +16,20 @@ from jira import JIRA
 
 _conf = None
 
+# JIRA ISSUE TRANSITION LIST
+# ID: 51, Name: Reopen
+# ID: 11, Name: Open
+# ID: 21, Name: In Progress
+# ID: 31, Name: Resolved
+# ID: 41, Name: Reopened
+# ID: 51, Name: Closed
+# ID: 61, Name: testing
+# ID: 71, Name: Analyse
+# ID: 81, Name: Ready For Test
+# ID: 101, Name: 已部署
+# ID: 121, Name: Ready For Dev
+# ID: 131, Name: Blocked
+
 
 class GiteeError(Exception):
     pass
@@ -226,6 +240,11 @@ class MyJira(object):
     def update_issue(self, issue_id, comment, transition):
         issue = self.jira.issue(issue_id)
         self.jira.add_comment(issue_id, comment)
+        self.jira.transition_issue(issue.key, transition)
+
+    def start_on_issue(self, issue_id, component, transition):
+        issue = self.jira.issue(issue_id)
+        issue.update(fields={"components": [{ "name": component }]})
         self.jira.transition_issue(issue.key, transition)
 
     def get_fix_versions(self, issue_id):
@@ -535,6 +554,20 @@ def review(no):
 
 
 @main.command()
+@click.argument("issue_no")
+def start(issue_no):
+    comp = os.path.basename(os.getcwd())
+    try:
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+        jira.start_on_issue(issue_no, comp, '21')
+    except MyJiraError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
+@main.command()
 def runtests():
     _test_git()
     _test_jira()
@@ -562,6 +595,7 @@ def _test_jira():
     if jra.get_summary("CLOUD-4870") != "160部署程序缺少docker load":
         print("XXX: wrong issue title")
     jra.list_transitions("TEST-4")
+    jra.list_transitions("CLOUD-4414")
     st = jra.get_issue_status("CLOUD-4414")
     if st != "Closed":
         print("XXX: Wrong issue status")
