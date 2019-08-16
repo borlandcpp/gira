@@ -387,7 +387,8 @@ def merge(no, force):
         print("'force' only allowed for project specific bug fixes. Giving up.")
         return 4
 
-    if pr.head != "master" and jira.trunk_required(pr.issue_id):
+    # used to be pr.head but there seems to be problem with gitee API
+    if pr.base['label'] != "master" and jira.trunk_required(pr.issue_id):
         print("Jira fix version includes trunk but only merging to branch.")
         print("Perhaps you should split the Jira issue. Giving up.")
         return 5
