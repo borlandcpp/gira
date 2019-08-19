@@ -10,7 +10,9 @@ import click
 import subprocess
 import requests
 import toml
+from retrying import retry
 from git import Repo
+import git
 from jira import JIRA
 
 
@@ -43,11 +45,16 @@ class Gitee(object):
     def __init__(self, user, token):
         self.user = user
         self.token = token
-        try:
-            self.git = Git()
-            self.owner, self.repo = self.git.info()
-        except Exception:  # TODO: catch narrower exceptions
-            raise GiteeError("You should run this from within a gitee repo")
+        search = [".", "..", "../..", "/you-will-never-find-me///"]
+        for s in search:
+            try:
+                self.git = Git(os.path.abspath(s))
+                self.owner, self.repo = self.git.info()
+                break
+            except git.exc.NoSuchPathError:
+                raise GiteeError("You should run this from within a gitee repo")
+            except git.exc.InvalidGitRepositoryError:
+                pass # continue
         self._root = Gitee.api_root.format(self.owner, self.repo)
 
     def _url(self, urls, params):
@@ -78,6 +85,12 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError("RES %d" % res.status_code)
         return res.text
+
+    def get_branch(self, br):
+        res = self.get(("branches", br), {})
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+        return res
 
     def merge(self, pr):
         res = self.put(self._url(("pulls", pr, "merge"), None), {"number": pr})
@@ -391,6 +404,7 @@ def merge(no, force):
     if pr.base['label'] != "master" and jira.trunk_required(pr.issue_id):
         print("Jira fix version includes trunk but only merging to branch.")
         print("Perhaps you should split the Jira issue. Giving up.")
+        print(f"base: {pr.base}, issue: {pr.issue_id}")
         return 5
 
     try:
@@ -557,15 +571,42 @@ def review(no):
 @main.command()
 @click.argument("issue_no")
 def start(issue_no):
-    comp = os.path.basename(os.getcwd())
+    root = subprocess.check_output(
+            ['git', 'rev-parse', '--show-toplevel']).strip()
+    pwd = subprocess.check_output(
+            ['git', 'rev-parse', '--show-prefix']).strip()
+    comp = os.path.join(os.path.basename(root), pwd).decode("utf-8").strip("/")
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
     try:
+        gitee = Gitee(user, token)
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
-        jira.start_on_issue(issue_no, comp, '21')
     except MyJiraError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
+
+    @retry(stop_max_attempt_number=5)
+    def branch_ready():
+        try:
+            gitee.get_branch(issue_no)
+            return True
+        except GiteeError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return False
+
+    # wait for webhook to create remote branch
+    jira.start_on_issue(issue_no, comp, '21')
+    if not branch_ready():
+        print("Something went wrong with jira webhook. Aborting...")
+        return
+
+    # checkout to new branch
+    gitee.git.repo.git.checkout("master")
+    gitee.git.repo.git.pull()
+    gitee.git.repo.git.checkout(issue_no)
+    print("You're all set. 请开始你的表演．．．")
 
 
 @main.command()
