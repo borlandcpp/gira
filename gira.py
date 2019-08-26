@@ -316,6 +316,10 @@ class MyJira(object):
     def get_summary(self, issue_id):
         return self._get_field(issue_id, "summary")
 
+    def get_assignee(self, issue_id):
+        assignee = self._get_field(issue_id, "assignee")
+        return assignee.name if assignee is not None else ""
+
 
 @click.group()
 def main():
@@ -587,6 +591,9 @@ def start(issue_no):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+    def issue_ready_to_start():
+        return jira.get_assignee(issue_no) and len(jira.get_fix_versions(issue_no))
+
     @retry(stop_max_attempt_number=5)
     def branch_ready():
         try:
@@ -595,6 +602,10 @@ def start(issue_no):
         except GiteeError as e:
             print(f"Error: {e}", file=sys.stderr)
             return False
+
+    if not issue_ready_to_start():
+        print("Issue has no fix versions or not assigned to someone. Aborting...")
+        return False
 
     # wait for webhook to create remote branch
     jira.start_on_issue(issue_no, comp, '21')
