@@ -594,14 +594,13 @@ def start(issue_no):
     def issue_ready_to_start():
         return jira.get_assignee(issue_no) and len(jira.get_fix_versions(issue_no))
 
-    @retry(stop_max_attempt_number=5)
+    @retry(stop_max_attempt_number=50, wait_fixed=2000)
     def branch_ready():
         try:
             gitee.get_branch(issue_no)
             return True
         except GiteeError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            return False
+            raise e
 
     if not issue_ready_to_start():
         print("Issue has no fix versions or not assigned to someone. Aborting...")
