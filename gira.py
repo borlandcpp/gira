@@ -574,6 +574,7 @@ def review(no):
     gitee.git.repo.git.pull()
     print(f"Switching to branch:\t{pr.issue_id}")
     gitee.git.repo.git.checkout(pr.issue_id)
+    gitee.git.repo.git.pull()
     print(f"Trying to build image...")
     os.system("make docker")
 
