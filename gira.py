@@ -570,6 +570,12 @@ def review(no):
 
     print(f"Reviewing PR for:\t{jira.get_summary(pr.issue_id)}")
     gitee.goto_pull(no)
+    gitee.git.repo.git.checkout("master")
+    gitee.git.repo.git.pull()
+    print(f"Switching to branch:\t{pr.issue_id}")
+    gitee.git.repo.git.checkout(pr.issue_id)
+    print(f"Trying to build image...")
+    os.system("make docker")
 
 
 @main.command()
