@@ -322,11 +322,13 @@ class MyJira(object):
 
     def push_off(self, issue_id, frm, to):
         issue = self.jira.issue(issue_id)
-        if len(issue.fields.fixVersions) != 1 \
-                or issue.fields.fixVersions[0].name != frm:
-                    raise MyJiraError(f"Multiple fixVersions. Giving up.")
-                    return
-        issue.update(fields={"fixVersions": [{"name": to}]})
+        newfv = []
+        for fv in issue.fields.fixVersions:
+            if fv.name == frm:
+                newfv.append({"name": to})
+            else:
+                newfv.append({"name": fv.name})
+        issue.update(fields={"fixVersions": newfv})
 
 
 @click.group()
