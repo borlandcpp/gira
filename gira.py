@@ -320,6 +320,14 @@ class MyJira(object):
         assignee = self._get_field(issue_id, "assignee")
         return assignee.name if assignee is not None else ""
 
+    def push_off(self, issue_id, frm, to):
+        issue = self.jira.issue(issue_id)
+        if len(issue.fields.fixVersions) != 1 \
+                or issue.fields.fixVersions[0].name != frm:
+                    raise MyJiraError(f"Multiple fixVersions. Giving up.")
+                    return
+        issue.update(fields={"fixVersions": [{"name": to}]})
+
 
 @click.group()
 def main():
@@ -624,6 +632,21 @@ def start(issue_no):
     gitee.git.repo.git.pull()
     gitee.git.repo.git.checkout(issue_no)
     print("You're all set. 请开始你的表演．．．")
+
+
+@main.command()
+@click.argument("issue_no")
+@click.argument("frm")
+@click.argument("to")
+def pushoff(issue_no, frm, to):
+    try:
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+        jira.push_off(issue_no, frm, to)
+    except MyJiraError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 
 @main.command()
