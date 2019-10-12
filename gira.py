@@ -330,6 +330,10 @@ class MyJira(object):
                 newfv.append({"name": fv.name})
         issue.update(fields={"fixVersions": newfv})
 
+    def has_children(self, issue_id):
+        issue = self.jira.issue(issue_id)
+        return len(issue.fields.subtasks) > 0
+
 
 @click.group()
 def main():
@@ -344,6 +348,9 @@ def _good_jira_issue(jira, issue_id, force=False):
     vers = jira.get_fix_versions(issue_id)
     if len(vers) == 0:
         print("Invalid Jira issue: no fixVersion")
+        return False
+    if jira.has_children(issue_id):
+        print("Refusing to merge issue with subtask")
         return False
 
     # fixVersion can be:
@@ -701,6 +708,10 @@ def _test_jira():
         print("XXX: Should allow non-semver fixVersion")
     if not jra.trunk_required("CLOUD-5450"):
         print("XXX: issue requires trunk")
+    if not jra.has_children("CLOUD-7356"):
+        print("XXX: expected parent task")
+    if jra.has_children("CLOUD-7357"):
+        print("XXX: expected no children task")
 
 
 def _test_git():
