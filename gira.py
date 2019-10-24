@@ -425,7 +425,7 @@ def merge(no, force):
     if pr.base['label'] != "master" and jira.trunk_required(pr.issue_id):
         print("Jira fix version includes trunk but only merging to branch.")
         print("Perhaps you should split the Jira issue. Giving up.")
-        print(f"base: {pr.base}, issue: {pr.issue_id}")
+        print(f"\n\n\nbase: {pr.base}, issue: {pr.issue_id}")
         return 5
 
     try:
@@ -585,14 +585,16 @@ def review(no):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    print(f"Reviewing PR for:\t{jira.get_summary(pr.issue_id)}")
+    print(f"===> Reviewing PR for:\t{jira.get_summary(pr.issue_id)}")
     gitee.goto_pull(no)
     gitee.git.repo.git.checkout("master")
     gitee.git.repo.git.pull()
-    print(f"Switching to branch:\t{pr.issue_id}")
+    print(f"===> Switching to branch:\t{pr.issue_id}")
     gitee.git.repo.git.checkout(pr.issue_id)
     gitee.git.repo.git.pull()
-    print(f"Trying to build image...")
+    print(f"===> Trying to run unit tests...")
+    os.system("make test")
+    print(f"===> Trying to build image...")
     os.system("make docker")
 
 
