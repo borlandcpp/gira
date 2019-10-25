@@ -410,6 +410,7 @@ def merge(no, force):
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
+        print(f"===> Merging PR for: {pr.issue_id} {jira.get_summary(pr.issue_id)}")
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
@@ -585,7 +586,7 @@ def review(no):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    print(f"===> Reviewing PR for:\t{jira.get_summary(pr.issue_id)}")
+    print(f"===> Reviewing PR for: {pr.issue_id} {jira.get_summary(pr.issue_id)}")
     gitee.goto_pull(no)
     gitee.git.repo.git.checkout("master")
     gitee.git.repo.git.pull()
@@ -593,9 +594,11 @@ def review(no):
     gitee.git.repo.git.checkout(pr.issue_id)
     gitee.git.repo.git.pull()
     print(f"===> Trying to run unit tests...")
-    os.system("make test")
+    if os.system("make test") != 0:
+        print(f"===> ❌ Unit tests failed!!!")
     print(f"===> Trying to build image...")
-    os.system("make docker")
+    if os.system("make docker") != 0:
+        print(f"===> ❌ Building docker image failed!!!")
 
 
 @main.command()
