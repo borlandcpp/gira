@@ -649,9 +649,9 @@ def start(issue_no):
 
 
 @main.command()
-@click.argument("issue_no")
 @click.argument("frm")
 @click.argument("to")
+@click.argument("issue_no")
 def pushoff(issue_no, frm, to):
     try:
         jira = MyJira(
