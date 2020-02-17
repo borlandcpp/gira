@@ -12,6 +12,7 @@ import requests
 import toml
 from retrying import retry
 from git import Repo
+from git.exc import GitCommandError
 import git
 from jira import JIRA
 
@@ -19,7 +20,7 @@ from jira import JIRA
 _conf = None
 
 # JIRA ISSUE TRANSITION LIST
-# ID: 51, Name: Reopen
+# ID: 51, Name: Reopen, this seems wrong
 # ID: 11, Name: Open
 # ID: 21, Name: In Progress
 # ID: 31, Name: Resolved
@@ -276,8 +277,7 @@ class MyJira(object):
                 return True
         return False
 
-    def cherry_pick(self, issue_id, frm, to):
-        "tries to automatically cherry-pick to the correct release branch"
+    def get_cherry_pick_branches(self, issue_id, frm, to):
         fv = self.get_fix_versions(issue_id)
         branches = []
         for f in fv:
@@ -289,17 +289,7 @@ class MyJira(object):
             if rv.project:
                 rel += f"-{rv.project}"
             branches.append(rel)
-        if not branches:
-            return
-        print()
-        print("1. Run the following commands")
-        print("2. Examine the result")
-        print("3. If everything looks OK, PUSH!\n")
-        print("git checkout master && git pull")
-        for b in branches:
-            print(f"# Updating release branch {b}...")
-            print(f"git checkout {b} && git pull")
-            print(f"git cherry-pick {frm}..{to}")
+        return branches
 
     def list_transitions(self, issue_id):
         jra = JIRA(
@@ -394,14 +384,55 @@ def all_is_well(gitee, pr, jira, force):
     return _good_jira_issue(jira, pr.issue_id, force)
 
 
+def cherry_pick_real(git, branches, frm, to):
+    git.checkout("master")
+    git.pull()
+    for br in branches:
+        print(f"===> switching to {br}...")
+        git.checkout(br)
+        print(f"===> pulling from remote repo...")
+        git.pull()
+        print(f"===> cherry picking {frm}..{to}...")
+        git.cherry_pick(f"{frm}..{to}")
+        print(f"===> pushing to remote repo...")
+        git.push()
+        print(f"===> switching to master...")
+        git.checkout("master")
+
+
+def cherry_pick(git, branches, frm, to, doit=True):
+    """tries to automatically cherry-pick to the correct release branch from
+    master"""
+    if not branches:
+        return
+    if doit:
+        cherry_pick_real(git, branches, frm, to)
+        return
+    print()
+    print("1. Run the following commands")
+    print("2. Examine the result")
+    print("3. If everything looks OK, PUSH!\n")
+    print("git checkout master && git pull")
+    for b in branches:
+        print(f"# Updating release branch {b}...")
+        print(f"git checkout {b} && git pull")
+        print(f"git cherry-pick {frm}..{to}")
+
+
+
 @main.command()
 @click.option(
     "--force/--no-force",
     default=False,
     help="Force merging of PR. Useful for project specific changes.",
 )
+@click.option(
+    "--autocp/--no-autocp",
+    default=True,
+    help="Automatically cherry pick to various release branches",
+)
 @click.argument("no")
-def merge(no, force):
+def merge(no, force, autocp):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -450,16 +481,30 @@ def merge(no, force):
         return 2
     # TODO: catch JIRA exception
 
-    if not force:  # FIXME: this is leaky but let's assume it's OK
-        # this has to be done to make sure that local clone has the latest commit
+    if force:  # FIXME: this is leaky but let's assume it's OK
+        return
+
+    # this has to be done to make sure that local clone has the latest commit
+    try:
         gitee.git.repo.git.checkout("master")
         gitee.git.repo.git.pull()
-        try:
-            frm, to = gitee.git.get_head_parents()
-        except ValueError:
-            print("Something wrong with HEAD. It's not a merge commit.")
-            return 3
-        jira.cherry_pick(pr.issue_id, frm, to)
+    except git.exc.GitCommandError as e:
+        print(e)
+        print("Unable to switch to master. Perhaps you have an dirty sandbox.")
+        return 11
+
+    try:
+        frm, to = gitee.git.get_head_parents()
+    except ValueError:
+        print("Something wrong with HEAD. It's not a merge commit.")
+        return 3
+    branches = jira.get_cherry_pick_branches(pr.issue_id, frm, to)
+    try:
+        cherry_pick(gitee.git.repo.git, branches, frm, to, autocp)
+    except git.exc.GitCommandError as e:
+        print(e)
+        print("===> Something went wrong. Re-opending jira issue")
+        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # 51 = reopen
 
 
 @main.command()
