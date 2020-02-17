@@ -729,6 +729,7 @@ def load_conf(*names):
             continue
 
 
+# {{{ Test code
 def _test_jira():
     print("===> Testing jira...")
     jra = MyJira(_conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"])
@@ -810,6 +811,7 @@ def _test_release():
         else:
             print(f"NOK {rel}")
             print(f"{r.major}.{r.minor}.{r.fix}-{r.project}")
+# }}}
 
 
 if __name__ == "__main__":
