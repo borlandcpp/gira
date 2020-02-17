@@ -730,6 +730,7 @@ def load_conf(*names):
 
 
 def _test_jira():
+    print("===> Testing jira...")
     jra = MyJira(_conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"])
     fv = jra.get_fix_versions("CLOUD-4870")
     print(fv)
@@ -765,6 +766,7 @@ def _test_jira():
 
 
 def _test_git():
+    print("===> Testing git...")
     git = Git()
     picks = git.get_head_parents()
     if len(picks) != 2:
@@ -775,6 +777,7 @@ def _test_git():
 
 
 def _test_gitee():
+    print("===> Testing gitee...")
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     gitee = Gitee(user, token)
@@ -784,6 +787,7 @@ def _test_gitee():
 
 
 def _test_release():
+    print("===> Testing release...")
     releases = {
         "Infinity": ("", "", "", "", False),
         "v1": ("", "", "", "", False),
