@@ -1,3 +1,12 @@
+# Usage
+* prepare `$HOME/.config/gira.toml` with given example
+* `cd` into a gitee project
+* `gira merge 17` will merge PR 17 and update JIRA issue and cherry pick changes
+    * It will try to cherry pick to the correct branches automatically **and** push to remote repo. If it fails, it Re-Opens the jira issue
+    * `gira merge --no-autocp 17` prints out instruction for manual cherry-picking.
+* `gira --help` inside the git repository
+
+
 # Build
 * `python3 -m venv venv`
 * `. ./venv/bin/activate`
@@ -6,16 +15,14 @@
     * never tried on Windows
 
 
-# Usage
-* prepare `$HOME/.config/gira.toml` with given example
-* `cd` into a gitee project
-* `gira merge 17` will merge PR 17 and update JIRA issue and give instructions for cherry picking
-* `gira --help` inside the git repository
-
-
 # TODO
-* Allow manipulation of jira issue
 * All related party has to say OK. There seems to be a bug with gitee
-* Should stop when git command fails
-* Default to auto cherry-pick
 * Automatically add Jira link when PR is created
+* `gira.py start` to
+    1. set component
+    1. change to in progress
+    1. wait for branch to be created
+    1. checkout 
+* When jira has 1.7.0 and 1.6.7-cmft, PR goes to release-1.6-cmft, should reject
+* --force should ignore jira status
+* Allow manipulation of jira issue
