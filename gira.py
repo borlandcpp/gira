@@ -385,18 +385,19 @@ def all_is_well(gitee, pr, jira, force):
 
 
 def cherry_pick_real(git, branches, frm, to):
+    print(f"===> Cherry picking to branches: {branches}...")
     git.checkout("master")
     git.pull()
     for br in branches:
-        print(f"===> switching to {br}...")
+        print(f"switching to {br}...")
         git.checkout(br)
-        print(f"===> pulling from remote repo...")
+        print(f"pulling from remote repo...")
         git.pull()
-        print(f"===> cherry picking {frm}..{to}...")
+        print(f"cherry picking {frm}..{to}...")
         git.cherry_pick(f"{frm}..{to}")
-        print(f"===> pushing to remote repo...")
+        print(f"pushing to remote repo...")
         git.push()
-        print(f"===> switching to master...")
+        print(f"switching to master...")
         git.checkout("master")
 
 
@@ -436,11 +437,13 @@ def merge(no, force, autocp):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
+        print(f"===> Making connection to gitee.com...")
         gitee = Gitee(user, token)
         if gitee.git.repo.is_dirty():
             print("Working directory seems to be dirty. Refusing to continue.")
             return 1
         pr = PR(gitee.get_pr(no))
+        print(f"===> Making connection to jira server...")
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
@@ -465,6 +468,7 @@ def merge(no, force, autocp):
 
     try:
         if not pr.merged():
+            print(f"===> Merging PR {no}...")
             gitee.merge(no)
         comment = "PR %d signed off by %s and %s.\n%s" % (
             pr.number,
@@ -472,6 +476,7 @@ def merge(no, force, autocp):
             pr.tester,
             pr.html_url,
         )
+        print(f"===> Updating jira issue status...")
         jira.update_issue(pr.issue_id, comment, "31")  # 31 = resolve
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
@@ -489,6 +494,7 @@ def merge(no, force, autocp):
 
     # this has to be done to make sure that local clone has the latest commit
     try:
+        print(f"===> Updating to latest master...")
         gitee.git.repo.git.checkout("master")
         gitee.git.repo.git.pull()
     except git.exc.GitCommandError as e:
@@ -507,7 +513,7 @@ def merge(no, force, autocp):
     except git.exc.GitCommandError as e:
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
-        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # 51 = reopen
+        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # 41 = reopen
 
 
 @main.command()
