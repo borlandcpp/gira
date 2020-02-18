@@ -18,6 +18,7 @@ from jira import JIRA
 
 
 _conf = None
+_version = "2020-02-18"
 
 # JIRA ISSUE TRANSITION LIST
 # ID: 51, Name: Reopen, this seems wrong
@@ -824,6 +825,7 @@ def _test_release():
 
 
 if __name__ == "__main__":
+    print(f"gira {_version}\n")
     load_conf(
         os.path.join(os.environ["HOME"], "gira.toml"),
         os.path.join(os.environ["HOME"], ".config/gira.toml"),
