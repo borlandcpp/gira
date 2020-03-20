@@ -657,6 +657,28 @@ def review(no):
 
 
 @main.command()
+@click.argument("no")
+def switch(no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        pr = PR(gitee.get_pr(no))
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+    except GiteeError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    print(f"===> Switching to branch: {pr.issue_id}")
+    gitee.git.repo.git.checkout("master")
+    gitee.git.repo.git.pull()
+    gitee.git.repo.git.checkout(pr.issue_id)
+    gitee.git.repo.git.pull()
+
+
+@main.command()
 @click.argument("issue_no")
 def start(issue_no):
     root = subprocess.check_output(
