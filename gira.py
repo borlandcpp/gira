@@ -364,7 +364,7 @@ def _good_jira_issue(jira, issue_id, force=False):
     if trunk > 1:
         print("Jira issue assigned assigned to multiple major version. Giving up.")
         return False
-    if not trunk and bug_fix:
+    if not trunk and bug_fix and not force:
         print("Bug fixes has to go to master. Giving up.")
         return False
     if not trunk and proj_fix and not force:
