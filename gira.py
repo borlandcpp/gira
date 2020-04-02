@@ -3,6 +3,7 @@
 import giturlparse
 import os
 import sys
+import platform
 import json
 import re
 import urllib
@@ -33,6 +34,18 @@ _version = "2020-04-2"
 # ID: 101, Name: 已部署
 # ID: 121, Name: Ready For Dev
 # ID: 131, Name: Blocked
+
+
+def _open_url(url):
+    cmd = ""
+    s = platform.system()
+    if s == "Darwin":
+        cmd = "open"
+    elif s == "Windows":
+        cmd = "start"
+    else:
+        print("Warning: f{s} is not supported yet.")
+    subprocess.run([cmd, url])
 
 
 class GiteeError(Exception):
@@ -179,11 +192,11 @@ class Gitee(object):
 
     def goto_web(self):
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
-        subprocess.run(["open", url])
+        _open_url(url)
 
     def goto_pull(self, id):
         url = os.path.join(Gitee.web_root, self.owner, self.repo, "pulls", id)
-        subprocess.run(["open", url])
+        _open_url(url)
 
 
 class PR(object):
@@ -361,7 +374,7 @@ class MyJira(object):
 
     def goto_issue(self, issue_id):
         url = os.path.join(self.url, "browse", issue_id)
-        subprocess.run(["open", url])
+        _open_url(url)
 
 
 
