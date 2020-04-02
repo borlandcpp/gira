@@ -43,6 +43,8 @@ def _open_url(url):
         cmd = "open"
     elif s == "Windows":
         cmd = "start"
+    elif s == "Linux":
+        cmd = "xdg-open"
     else:
         print("Warning: f{s} is not supported yet.")
     subprocess.run([cmd, url])
