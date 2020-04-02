@@ -757,11 +757,6 @@ def switch(no):
 @click.argument("issue_no")
 def start(issue_no):
     "Start progress for JIRA issue"
-    root = subprocess.check_output(
-            ['git', 'rev-parse', '--show-toplevel']).strip()
-    pwd = subprocess.check_output(
-            ['git', 'rev-parse', '--show-prefix']).strip()
-    comp = os.path.join(os.path.basename(root), pwd).decode("utf-8").strip("/")
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -787,9 +782,11 @@ def start(issue_no):
     if not issue_ready_to_start():
         print("Issue has no fix versions or not assigned to someone. Aborting...")
         return False
+    print("===> Updating JIRA status...")
+    jira.update_issue(issue_no, "Starting...", '21')
 
+    print("===> Waiting for remote branch to be created...")
     # wait for webhook to create remote branch
-    jira.start_on_issue(issue_no, comp, '21')
     if not branch_ready():
         print("Something went wrong with jira webhook. Aborting...")
         return
@@ -797,8 +794,9 @@ def start(issue_no):
     # checkout to new branch
     gitee.git.repo.git.checkout("master")
     gitee.git.repo.git.pull()
+    print("===> Switching to PR branch...")
     gitee.git.repo.git.checkout(issue_no)
-    print("You're all set. 请开始你的表演．．．")
+    print("\n\nYou're all set. 请开始你的表演．．．")
 
 
 @main.command()
