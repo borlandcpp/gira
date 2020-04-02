@@ -925,7 +925,7 @@ def _test_jira():
 def _test_git():
     print("===> Testing git...")
     git = Git()
-    picks = git.get_head_parents()
+    picks = git.get_head_parents("head_parents_test")
     if len(picks) != 2:
         print("--- Something is wrong, the HEAD is not a merge commit! Perhaps you're testing in gira repo?")
     print(picks)
