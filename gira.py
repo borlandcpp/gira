@@ -281,6 +281,7 @@ class MyJira(object):
         self.jira = JIRA(
             _conf["jira"]["url"], auth=(_conf["jira"]["user"], _conf["jira"]["passwd"])
         )
+        self.url = url
 
     def update_issue(self, issue_id, comment, transition):
         issue = self.jira.issue(issue_id)
@@ -357,6 +358,11 @@ class MyJira(object):
     def has_children(self, issue_id):
         issue = self.jira.issue(issue_id)
         return len(issue.fields.subtasks) > 0
+
+    def goto_issue(self, issue_id):
+        url = os.path.join(self.url, "browse", issue_id)
+        subprocess.run(["open", url])
+
 
 
 @click.group()
@@ -657,6 +663,19 @@ def gitee():
         gitee.goto_web()
     except Exception as e:
         print(e)
+
+
+@main.command()
+@click.argument("pr_no")
+def jira(pr_no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    gitee = Gitee(user, token)
+    jira = MyJira(
+        _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+    )
+    pr = PR(gitee.get_pr(pr_no))
+    jira.goto_issue(pr.issue_id)
 
 
 @main.command()
