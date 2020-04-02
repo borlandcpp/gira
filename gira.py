@@ -237,10 +237,12 @@ class Git(object):
 
     """get what to cherry pick from master latest commits,
     assuming that sandbox is pulled and have the latest code"""
-
     def get_head_parents(self, branch="master"):
         head = self.repo.heads[branch]
         return [p.hexsha for p in head.commit.parents]
+
+    def current_branch(self):
+        return self.repo.active_branch.name
 
 
 class ReleaseVersion(object):
