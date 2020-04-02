@@ -649,7 +649,7 @@ def deluser(user):
 
 
 @main.command()
-def web():
+def gitee():
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
