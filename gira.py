@@ -65,7 +65,7 @@ class Gitee(object):
             return (
                 os.path.join(self._root, *urls) + "?" + urllib.parse.urlencode(params)
             )
-        else:  # for PUT and POST
+        else:  # for PUT and POST, FIXME: this is very *fing* confusing
             return os.path.join(self._root, *urls)
 
     def _good_perm(self, perm):
@@ -97,6 +97,24 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError("RES %d" % res.status_code)
         return res.text
+
+    def close_pr(self, pr):
+        res = self.patch(self._url(("pulls", pr), None), {"state": "closed"})
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+
+    def create_pr(self, title, head, base="master", reviewer="", tester=""):
+        res = self.post(self._url(("pulls", ""), None), {
+            "title": title,
+            "head": head,
+            "base": base,
+            "assignee": reviewer,
+            "tester": tester,
+            })
+        if not res.status_code == 201:
+            raise GiteeError(res)
+        return res
+
 
     def get_branch(self, br):
         res = self.get(("branches", br), {})
@@ -827,6 +845,17 @@ def _test_gitee():
     pr = PR(gitee.get_pr("25"))
     if pr.issue_id != "TEST-4":
         print("XXX: Should allow non-semver fixVersion")
+
+    try:
+        res = gitee.create_pr("Testing PR creation.", "create-pr-test")
+        no = res.json()["number"]
+        print(f"PR {no} created.")
+        gitee.close_pr(str(no))
+        print(f"PR {no} closed.")
+    except GiteeError as e:
+        print("XXX: Failed creating PR.")
+        print(e)
+        print(e.args[0].text)
 
 
 def _test_release():
