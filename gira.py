@@ -865,11 +865,18 @@ def pushoff(issue_no, frm, to):
 
 
 @main.command()
-def runtests():
-    _test_git()
-    _test_jira()
-    _test_release()
-    _test_gitee()
+@click.argument("what")
+def runtests(what):
+    # FIXME: don't know how to have default value for click argument
+    _all = globals()
+    key = f"_test_{what}"
+    if key in _all:
+        _all[key]()
+    elif what == "all":
+        _test_git()
+        _test_jira()
+        _test_release()
+        _test_gitee()
 
 
 def load_conf(*names):
