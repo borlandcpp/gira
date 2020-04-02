@@ -17,12 +17,4 @@
 
 # TODO
 * All related party has to say OK. There seems to be a bug with gitee
-* Automatically add Jira link when PR is created
-* `gira.py start` to
-    1. set component
-    1. change to in progress
-    1. wait for branch to be created
-    1. checkout 
 * When jira has 1.7.0 and 1.6.7-cmft, PR goes to release-1.6-cmft, should reject
-* --force should ignore jira status
-* Allow manipulation of jira issue
