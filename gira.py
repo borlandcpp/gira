@@ -474,6 +474,7 @@ def cherry_pick(git, branches, frm, to, doit=True):
 )
 @click.argument("no")
 def merge(no, force, autocp):
+    "Merge PR and resolve JIRA issue"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -559,6 +560,7 @@ def merge(no, force, autocp):
 @main.command()
 @click.argument("branch")
 def lockbr(branch):
+    "Lock branch"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -621,6 +623,7 @@ def show_prs(full):
 )
 @click.argument("what")
 def show(full, what):
+    "Show stuff"
     if what == "branch":
         show_branches(full)
     elif what == "team":
@@ -633,6 +636,7 @@ def show(full, what):
 @click.argument("user")
 @click.argument("permission", default="push")
 def adduser(user, permission):
+    "Add gitee user"
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -645,6 +649,7 @@ def adduser(user, permission):
 @main.command()
 @click.argument("user")
 def deluser(user):
+    "Delete gitee user"
     me = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -656,6 +661,7 @@ def deluser(user):
 
 @main.command()
 def gitee():
+    "Open gitee project page"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -668,6 +674,7 @@ def gitee():
 @main.command()
 @click.argument("pr_no")
 def jira(pr_no):
+    "Open JIRA issue page for PR"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     gitee = Gitee(user, token)
@@ -711,6 +718,7 @@ def review(no):
 @main.command()
 @click.argument("no")
 def switch(no):
+    "Switch to PR branch"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -733,6 +741,7 @@ def switch(no):
 @main.command()
 @click.argument("issue_no")
 def start(issue_no):
+    "Start progress for JIRA issue"
     root = subprocess.check_output(
             ['git', 'rev-parse', '--show-toplevel']).strip()
     pwd = subprocess.check_output(
@@ -780,6 +789,7 @@ def start(issue_no):
 @main.command()
 @click.argument("issue_no")
 def finish(issue_no):
+    "Finish JIRA issue"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
@@ -819,6 +829,7 @@ def finish(issue_no):
 @main.command()
 @click.argument("pr_no")
 def close_pr(pr_no):
+    "Close gitee PR"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     gitee = Gitee(user, token)
