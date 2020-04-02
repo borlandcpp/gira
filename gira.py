@@ -18,7 +18,7 @@ from jira import JIRA
 
 
 _conf = None
-_version = "2020-02-18"
+_version = "2020-04-2"
 
 # JIRA ISSUE TRANSITION LIST
 # ID: 51, Name: Reopen, this seems wrong
@@ -291,6 +291,9 @@ class MyJira(object):
         issue = self.jira.issue(issue_id)
         issue.update(fields={"components": [{ "name": component }]})
         self.jira.transition_issue(issue.key, transition)
+
+    def finish_issue(self, issue_id, comment):
+        self.update_issue(issue_id, comment, "81")
 
     def get_fix_versions(self, issue_id):
         issue = self.jira.issue(issue_id)
@@ -756,6 +759,54 @@ def start(issue_no):
 
 
 @main.command()
+@click.argument("issue_no")
+def finish(issue_no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    try:
+        gitee = Gitee(user, token)
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+    except MyJiraError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        if gitee.git.repo.is_dirty():
+            print("Working directory seems to be dirty. Refusing to continue.")
+            return 2
+        br = gitee.git.current_branch()
+        if br == "master":
+            print("You have to be on your PR branch to create a PR.")
+            return 3
+        print(f"===> Pushing to remote repo...")
+        gitee.git.repo.git.push()
+
+        # TODO: check if rebase required
+        print(f"===> Creating PR for {issue_no}...")
+        title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
+        res = gitee.create_pr(title, br, "master")  # TODO: automatically fill in assignee
+        jira.finish_issue(issue_no, f'PR created: {res.json()["html_url"]}')
+        print("===> Navigating to PR. 请手动分配reviewer和tester。并按语雀项目规定配置PR。")
+        gitee.goto_pull(str(res.json()["number"]))
+    except GiteeError as e:
+        print("Failed to create PR.")
+        print(e)
+        print(e.args[0].text)
+    # TODO: catch git and jira exceptions
+
+
+@main.command()
+@click.argument("pr_no")
+def close_pr(pr_no):
+    user = _conf["gitee"]["user"]
+    token = _conf["gitee"]["token"]
+    gitee = Gitee(user, token)
+    gitee.close_pr(pr_no)
+
+
+@main.command()
 @click.argument("frm")
 @click.argument("to")
 @click.argument("issue_no")
@@ -833,10 +884,13 @@ def _test_git():
     git = Git()
     picks = git.get_head_parents()
     if len(picks) != 2:
-        print("Something is wrong, the HEAD is not a merge commit!")
+        print("--- Something is wrong, the HEAD is not a merge commit! Perhaps you're testing in gira repo?")
     print(picks)
     git.repo.git.checkout("master")
     git.repo.git.pull()
+    if git.current_branch() != "master":
+        print("XXX: Current branch should be master")
+
 
 
 def _test_gitee():
