@@ -79,6 +79,11 @@ class Gitee(object):
         d.update(_data)
         return requests.put(url, data=d)
 
+    def post(self, url, _data):
+        d = {"access_token": self.token, "owner": self.owner, "repo": self.repo}
+        d.update(_data)
+        return requests.post(url, data=d)
+
     def delete(self, url):
         return requests.delete(url)
 
