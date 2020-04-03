@@ -750,9 +750,6 @@ def switch(no):
     try:
         gitee = Gitee(user, token)
         pr = PR(gitee.get_pr(no))
-        jira = MyJira(
-            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
-        )
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
