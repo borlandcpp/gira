@@ -18,3 +18,5 @@
 # TODO
 * All related party has to say OK. There seems to be a bug with gitee
 * When jira has 1.7.0 and 1.6.7-cmft, PR goes to release-1.6-cmft, should reject
+* `start` should check jira issue condition
+* check if rebase is required
