@@ -259,6 +259,14 @@ class Git(object):
     def current_branch(self):
         return self.repo.active_branch.name
 
+    def needs_rebase(self, head, base="master"):
+        "Assume that git pull has been done"
+        # intentionally not handling exception here
+        mb = self.repo.merge_base(base, head)[0]  # FIXME: not sure why this is a list
+        master_head = self.repo.refs["master"].commit
+        return mb.hexsha != master_head.hexsha
+
+
 
 class ReleaseVersion(object):
     def __init__(self, rel):
@@ -940,6 +948,9 @@ def _test_git():
     git.repo.git.pull()
     if git.current_branch() != "master":
         print("XXX: Current branch should be master")
+    if not git.needs_rebase("rebase_test", "master"):
+        print("XXX: rebase is required")
+
 
 
 
