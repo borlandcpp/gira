@@ -833,7 +833,10 @@ def finish(issue_no):
         print(f"===> Pushing to remote repo...")
         gitee.git.repo.git.push()
 
-        # TODO: check if rebase required
+        if gitee.git.needs_rebase(br, "master"):
+            print("!!! It looks like your branch needs rebasing.")
+            return 4
+
         print(f"===> Creating PR for {issue_no}...")
         title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
         res = gitee.create_pr(title, br, "master")  # TODO: automatically fill in assignee
