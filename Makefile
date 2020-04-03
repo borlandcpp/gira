@@ -9,4 +9,4 @@ clean:
 
 
 test:
-	python gira.py runtests
+	python gira.py runtests all
