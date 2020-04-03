@@ -544,7 +544,7 @@ def merge(no, force, autocp):
             pr.html_url,
         )
         print(f"===> Updating jira issue status...")
-        jira.update_issue(pr.issue_id, comment, "31")  # 31 = resolve
+        jira.update_issue(pr.issue_id, comment, "31")  # resolve
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
             print(f"fixVersions: {', '.join(fv)}")
