@@ -580,7 +580,7 @@ def merge(no, force, autocp):
     except git.exc.GitCommandError as e:
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
-        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # 41 = reopen
+        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # reopen
 
 
 @main.command()
