@@ -118,11 +118,12 @@ class Gitee(object):
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
-    def create_pr(self, title, head, base="master", reviewer="", tester=""):
+    def create_pr(self, title, head, body, base="master", reviewer="", tester=""):
         res = self.post(self._url(("pulls", ""), None), {
             "title": title,
             "head": head,
             "base": base,
+            "body": body,
             "assignee": reviewer,
             "tester": tester,
             })
@@ -368,6 +369,9 @@ class MyJira(object):
         assignee = self._get_field(issue_id, "assignee")
         return assignee.name if assignee is not None else ""
 
+    def get_issue_url(self, issue_id):
+        return os.path.join(self.url, "browse", issue_id)
+
     def push_off(self, issue_id, frm, to):
         issue = self.jira.issue(issue_id)
         newfv = []
@@ -383,8 +387,7 @@ class MyJira(object):
         return len(issue.fields.subtasks) > 0
 
     def goto_issue(self, issue_id):
-        url = os.path.join(self.url, "browse", issue_id)
-        _open_url(url)
+        _open_url(self.get_issue_url(issue_id))
 
 
 
@@ -839,7 +842,9 @@ def finish(issue_no):
 
         print(f"===> Creating PR for {issue_no}...")
         title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
-        res = gitee.create_pr(title, br, "master")  # TODO: automatically fill in assignee
+        body = "%s\nFix Version/s: %s" % (
+            jira.get_issue_url(issue_no), ",".join(jira.get_fix_versions(issue_no)))
+        res = gitee.create_pr(title, br, body, "master")  # TODO: automatically fill in assignee
         jira.finish_issue(issue_no, f'PR created: {res.json()["html_url"]}')
         print("===> Navigating to PR. 请手动分配reviewer和tester。并按语雀项目规定配置PR。")
         gitee.goto_pull(str(res.json()["number"]))
@@ -967,7 +972,7 @@ def _test_gitee():
         print("XXX: Should allow non-semver fixVersion")
 
     try:
-        res = gitee.create_pr("Testing PR creation.", "create-pr-test")
+        res = gitee.create_pr("Testing PR creation.", "create-pr-test", "lalala")
         no = res.json()["number"]
         print(f"PR {no} created.")
         gitee.close_pr(str(no))
