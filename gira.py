@@ -790,7 +790,7 @@ def start(issue_no):
     if not issue_ready_to_start():
         print("Issue has no fix versions or not assigned to someone. Aborting...")
         return False
-    print("===> Updating JIRA status...")
+    print("===> Updating JIRA issue status...")
     jira.update_issue(issue_no, "Starting...", '21')
 
     print("===> Waiting for remote branch to be created...")
