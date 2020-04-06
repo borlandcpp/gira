@@ -54,7 +54,7 @@ class GiteeError(Exception):
     pass
 
 
-class Gitee(object):
+class Gitee():
     api_root = "https://gitee.com/api/v5/repos/{}/{}"
     web_root = "https://www.gitee.com/"
     allowed_permissions = ("push", "pull", "admin")
@@ -131,7 +131,6 @@ class Gitee(object):
             raise GiteeError(res)
         return res
 
-
     def get_branch(self, br):
         res = self.get(("branches", br), {})
         if not res.status_code == 200:
@@ -202,7 +201,7 @@ class Gitee(object):
         _open_url(url)
 
 
-class PR(object):
+class PR():
     def __init__(self, jsn):
         self.raw = jsn
         # TODO: handle exceptions
@@ -239,7 +238,7 @@ class PR(object):
         return self.data[att]
 
 
-class Git(object):
+class Git():
     def __init__(self, path="."):
         self.path = path
         self.repo = Repo(self.path)
@@ -268,8 +267,7 @@ class Git(object):
         return mb.hexsha != master_head.hexsha
 
 
-
-class ReleaseVersion(object):
+class ReleaseVersion():
     def __init__(self, rel):
         self.release = rel
         self.is_semver = True
@@ -300,7 +298,7 @@ class MyJiraError(Exception):
     pass
 
 
-class MyJira(object):
+class MyJira():
     def __init__(self, url, user, passwd):
         self.jira = JIRA(
             _conf["jira"]["url"], auth=(_conf["jira"]["user"], _conf["jira"]["passwd"])
@@ -388,7 +386,6 @@ class MyJira(object):
 
     def goto_issue(self, issue_id):
         _open_url(self.get_issue_url(issue_id))
-
 
 
 @click.group()
@@ -484,7 +481,6 @@ def cherry_pick(git, branches, frm, to, doit=True):
         print(f"# Updating release branch {b}...")
         print(f"git checkout {b} && git pull")
         print(f"git cherry-pick {frm}..{to}")
-
 
 
 @main.command()
