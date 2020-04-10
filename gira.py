@@ -137,10 +137,8 @@ class Gitee():
             raise GiteeError(res.text)
         return res
 
-    def merge(self, pr, squash=False):
-        method = "squash" if squash else "merge"
-        res = self.put(self._url(("pulls", pr, "merge"), None),
-                    {"number": pr, "merge_method": method})
+    def merge(self, pr):
+        res = self.put(self._url(("pulls", pr, "merge"), None), {"number": pr})
         if not res.status_code == 200:
             raise GiteeError(res.text)
 
@@ -496,13 +494,8 @@ def cherry_pick(git, branches, frm, to, doit=True):
     default=True,
     help="Automatically cherry pick to various release branches",
 )
-@click.option(
-    "--squash/--no-squash",
-    default=False,
-    help="Squash into a single commit on master",
-)
 @click.argument("no")
-def merge(no, force, autocp, squash):
+def merge(no, force, autocp):
     "Merge PR and resolve JIRA issue"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -539,7 +532,7 @@ def merge(no, force, autocp, squash):
     try:
         if not pr.merged():
             print(f"===> Merging PR {no}...")
-            gitee.merge(no, squash)
+            gitee.merge(no)
         comment = "PR %d signed off by %s and %s.\n%s" % (
             pr.number,
             pr.reviwer,
