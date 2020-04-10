@@ -1,8 +1,8 @@
 .PHONY: test clean default
 
 default:
-	pyinstaller -c -F gira.py
-	cp dist/gira ${HOME}/bin && chmod a+x ${HOME}/bin/gira
+	pyinstaller -c gira.py
+	rm -rf ${HOME}/bin/gira && ln -s ${PWD}/dist/gira/gira ${HOME}/bin/gira
 
 clean:
 	@rm -rf __pycache__ build dist
