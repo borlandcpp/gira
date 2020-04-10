@@ -19,7 +19,7 @@ from jira import JIRA
 
 
 _conf = None
-_version = "2020-04-2"
+_version = "2020-04-10"
 
 # JIRA ISSUE TRANSITION LIST
 # ID: 51, Name: Reopen, this seems wrong
