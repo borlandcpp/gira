@@ -380,6 +380,14 @@ class MyJira():
                 newfv.append({"name": fv.name})
         issue.update(fields={"fixVersions": newfv})
 
+    def exclude(self, issue_id, version):
+        issue = self.jira.issue(issue_id)
+        newfv = []
+        for fv in issue.fields.fixVersions:
+            if fv.name != version:
+                newfv.append({"name": fv.name})
+        issue.update(fields={"fixVersions": newfv})
+
     def has_children(self, issue_id):
         issue = self.jira.issue(issue_id)
         return len(issue.fields.subtasks) > 0
@@ -868,6 +876,21 @@ def pushoff(issue_no, frm, to):
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
         jira.push_off(issue_no, frm, to)
+    except MyJiraError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
+@main.command()
+@click.argument("version")
+@click.argument("issue_no")
+def exclude(issue_no, version):
+    "Remove issue from a release"
+    try:
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+        jira.exclude(issue_no, version)
     except MyJiraError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
