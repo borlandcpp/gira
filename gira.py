@@ -801,6 +801,11 @@ def start(issue_no):
     # wait for webhook to create remote branch
     if not branch_ready():
         print("Something went wrong with jira webhook. Aborting...")
+        print("Possible reasons includes:")
+        print("1. JIRA issue doesn't have a valid component.")
+        print("2. JIRA issue isn't assgined to.")
+        print("3. JIRA issue status isn't *In Progress*.")
+
         return
 
     # checkout to new branch
