@@ -853,6 +853,7 @@ def finish(issue_no):
         res = gitee.create_pr(title, br, body, "master")  # TODO: automatically fill in assignee
         jira.finish_issue(issue_no, f'PR created: {res.json()["html_url"]}')
         print("===> Navigating to PR. 请手动分配reviewer和tester。并按语雀项目规定配置PR。")
+        print("同时请记得将JIRA issue assign给测试人员。")
         gitee.goto_pull(str(res.json()["number"]))
     except GiteeError as e:
         print("Failed to create PR.")
