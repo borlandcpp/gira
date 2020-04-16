@@ -508,13 +508,11 @@ def merge(no, force, autocp):
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
     try:
-        print(f"===> Making connection to gitee.com...")
         gitee = Gitee(user, token)
         if gitee.git.repo.is_dirty():
             print("Working directory seems to be dirty. Refusing to continue.")
             return 1
         pr = PR(gitee.get_pr(no))
-        print(f"===> Making connection to jira server...")
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
