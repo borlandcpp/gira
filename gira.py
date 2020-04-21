@@ -781,7 +781,7 @@ def start(issue_no):
     def issue_ready_to_start():
         return jira.get_assignee(issue_no) and len(jira.get_fix_versions(issue_no))
 
-    @retry(stop_max_attempt_number=50, wait_fixed=2000)
+    @retry(stop_max_attempt_number=10)
     def branch_ready():
         try:
             gitee.get_branch(issue_no)
@@ -797,7 +797,9 @@ def start(issue_no):
 
     print("===> Waiting for remote branch to be created...")
     # wait for webhook to create remote branch
-    if not branch_ready():
+    try:
+        branch_ready()
+    except GiteeError as e:
         print("Something went wrong with jira webhook. Aborting...")
         print("Possible reasons includes:")
         print("1. JIRA issue doesn't have a valid component.")
