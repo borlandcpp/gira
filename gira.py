@@ -19,7 +19,7 @@ from jira import JIRA
 
 
 _conf = None
-_version = "2020-04-10"
+_version = "2020-04-21"
 
 # JIRA ISSUE TRANSITION LIST
 # ID: 51, Name: Reopen, this seems wrong
@@ -652,11 +652,11 @@ def show_prs(full):
 @click.argument("what")
 def show(full, what):
     "Show stuff"
-    if what == "branch":
+    if what == "branch" or what == "branches":
         show_branches(full)
     elif what == "team":
         show_team(full)
-    elif what == "pr":
+    elif what == "pr" or what =="prs":
         show_prs(full)
 
 

@@ -34,5 +34,4 @@
 * Add `merge --continue` for when cherry pick failed
 * Should assign jira issue to a tester
 * Support non merge commit
-* `show pr` fails
-* reomve CLOUD-222 from finish
+* remove `CLOUD-2222` from finish
