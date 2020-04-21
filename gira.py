@@ -805,6 +805,7 @@ def start(issue_no):
         print("1. JIRA issue doesn't have a valid component.")
         print("2. JIRA issue isn't assgined to.")
         print("3. JIRA issue status isn't *In Progress*.")
+        print("4. 你的JIRA是中文的UI.")
 
         return
 
