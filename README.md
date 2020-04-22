@@ -20,7 +20,7 @@
 
 # Build
 * `python3 -m venv venv`
-    * **NOTE**: you have to use python3 installed by `brew`
+    * **NOTE**: you have to use python 3.7 installed by `brew`
 * `. ./venv/bin/activate`
 * `pip install -r requirements.txt`
 * do `make` and then a `gira` command should be installed under `$HOME/bin`. Add that to your path.
@@ -28,6 +28,7 @@
 
 
 # TODO
+* Cut release branch early
 * All related party has to say OK. There seems to be a bug with gitee
 * Should refuse to merge Epic or parent task
 * When jira has 1.7.0 and 1.6.7-cmft, PR goes to release-1.6-cmft, should reject
