@@ -516,7 +516,7 @@ def merge(no, force, autocp):
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
-        print(f"===> Merging PR for: {pr.issue_id} {jira.get_summary(pr.issue_id)}")
+        print(f"===> Processing PR for: {pr.issue_id} {jira.get_summary(pr.issue_id)}")
     except GiteeError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
