@@ -392,6 +392,10 @@ class MyJira():
         issue = self.jira.issue(issue_id)
         return len(issue.fields.subtasks) > 0
 
+    def is_epic(self, issue_id):
+        issue = self.jira.issue(issue_id)
+        return issue.fields.issuetype.name == "Epic"
+
     def goto_issue(self, issue_id):
         _open_url(self.get_issue_url(issue_id))
 
@@ -403,15 +407,15 @@ def main():
 
 def _good_jira_issue(jira, issue_id, force=False):
     st = jira.get_issue_status(issue_id)
-    if st == "Resolved" or st == "Closed":
+    if st in ["Resolved", "Closed"]:
         print("Jira issue {0} already Resolved or Closed. Giving up.".format(issue_id))
         return False
     vers = jira.get_fix_versions(issue_id)
     if len(vers) == 0:
         print("Invalid Jira issue: no fixVersion")
         return False
-    if jira.has_children(issue_id):
-        print("Refusing to merge issue with subtask")
+    if jira.has_children(issue_id) or jira.is_epic(issue_id):
+        print("Refusing to merge issue with subtask or Epic")
         return False
 
     # fixVersion can be:
@@ -964,6 +968,8 @@ def _test_jira():
         print("XXX: issue requires trunk")
     if not jra.has_children("CLOUD-7356"):
         print("XXX: expected parent task")
+    if not jra.is_epic("CLOUD-8443"):
+        print("XXX: expected epic")
     if jra.has_children("CLOUD-7357"):
         print("XXX: expected no children task")
 
