@@ -326,15 +326,18 @@ class MyJira():
         issue = self.jira.issue(issue_id)
         return issue.fields.status.name
 
-    def trunk_required(self, issue_id):
+    def get_trunk_fix_version(self, issue_id):
         fv = self.get_fix_versions(issue_id)
         for f in fv:
             rv = ReleaseVersion(f)
             if rv.fix == "0":  # '0' means trunk
-                return True
-        return False
+                return f  # Assuming there is only one
+        return None
 
-    def get_cherry_pick_branches(self, issue_id, frm, to):
+    def trunk_required(self, issue_id):
+        return self.get_trunk_fix_version(issue_id) is not None
+
+    def get_cherry_pick_branches(self, issue_id, ignore_trunk=True):
         fv = self.get_fix_versions(issue_id)
         branches = []
         for f in fv:
