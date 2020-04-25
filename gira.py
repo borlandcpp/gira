@@ -266,6 +266,12 @@ class Git():
         master_head = self.repo.refs["master"].commit
         return mb.hexsha != master_head.hexsha
 
+    def remote_branches(self):
+        for ref in self.repo.refs:
+            prefix = "refs/remotes/origin/"
+            if ref.path.startswith(prefix):
+                yield ref.path.partition(prefix)[2]
+
 
 class ReleaseVersion():
     def __init__(self, rel):
@@ -334,6 +340,13 @@ class MyJira():
                 return f  # Assuming there is only one
         return None
 
+    def get_trunk_branch(self, issue_id):
+        fv = self.get_trunk_fix_version(issue_id)
+        if not fv:
+            return ""
+        rv = ReleaseVersion(fv)
+        return f"release-{rv.major}.{rv.minor}"
+
     def trunk_required(self, issue_id):
         return self.get_trunk_fix_version(issue_id) is not None
 
@@ -343,7 +356,6 @@ class MyJira():
         for f in fv:
             rv = ReleaseVersion(f)
             if not rv.is_semver or rv.fix == "0":  # '0' means trunk
-                print(f"fixVersions {rv} ignored")
                 continue
             rel = f"release-{rv.major}.{rv.minor}"
             if rv.project:
@@ -463,7 +475,6 @@ def all_is_well(gitee, pr, jira, force):
 
 
 def cherry_pick_real(git, branches, frm, to):
-    print(f"===> Cherry picking to branches: {branches}...")
     git.checkout("master")
     git.pull()
     for br in branches:
@@ -583,7 +594,13 @@ def merge(no, force, autocp):
     except ValueError:
         print("Something wrong with HEAD. It's not a merge commit.")
         return 3
-    branches = jira.get_cherry_pick_branches(pr.issue_id, frm, to)
+    # When release branch is cut early, we have to include trunk fixVersion in
+    # cherry pick gargets. Like v1.100.0
+    branches = jira.get_cherry_pick_branches(pr.issue_id)
+    tbr = jira.get_trunk_branch(pr.issue_id)
+    if tbr in gitee.git.remote_branches():
+        branches.append(tbr)
+    print(f"===> Cherry picking to branches: {', '.join(branches)}...")
     try:
         cherry_pick(gitee.git.repo.git, branches, frm, to, autocp)
     except git.exc.GitCommandError as e:
@@ -976,6 +993,8 @@ def _test_jira():
         print("XXX: expected epic")
     if jra.has_children("CLOUD-7357"):
         print("XXX: expected no children task")
+    if jra.get_trunk_fix_version("CLOUD-8825") != "v1.100.0":
+        print("XXX: expected CLOUD-8825 to be released in v1.100.0")
 
 
 def _test_git():
@@ -991,6 +1010,8 @@ def _test_git():
         print("XXX: Current branch should be master")
     if not git.needs_rebase("rebase_test", "master"):
         print("XXX: rebase is required")
+    if not "test-remote-branches" in git.remote_branches():
+        print("XXX: expecting a remote branch 'test-remote-branches'")
 
 
 
