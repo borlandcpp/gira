@@ -577,7 +577,7 @@ def merge(no, force, autocp):
     # TODO: catch JIRA exception
 
     if force:  # FIXME: this is leaky but let's assume it's OK
-        return
+        return 0
 
     # this has to be done to make sure that local clone has the latest commit
     try:
@@ -600,6 +600,8 @@ def merge(no, force, autocp):
     tbr = jira.get_trunk_branch(pr.issue_id)
     if tbr in gitee.git.remote_branches():
         branches.append(tbr)
+    if not branches:
+        return 0
     print(f"===> Cherry picking to branches: {', '.join(branches)}...")
     try:
         cherry_pick(gitee.git.repo.git, branches, frm, to, autocp)
@@ -607,6 +609,7 @@ def merge(no, force, autocp):
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
         jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # reopen
+    return 0
 
 
 @main.command()
@@ -843,8 +846,13 @@ def start(issue_no):
 
 
 @main.command()
+@click.option(
+    "-b", "--branch", "branch",
+    default="master",
+    help="Specify target branch. Default is master",
+)
 @click.argument("issue_no")
-def finish(issue_no):
+def finish(branch, issue_no):
     "Finish JIRA issue"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
@@ -876,7 +884,7 @@ def finish(issue_no):
         title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
         body = "%s\nFix Version/s: %s" % (
             jira.get_issue_url(issue_no), ",".join(jira.get_fix_versions(issue_no)))
-        res = gitee.create_pr(title, br, body, "master")  # TODO: automatically fill in assignee
+        res = gitee.create_pr(title, br, body, branch)  # TODO: automatically fill in assignee
         jira.finish_issue(issue_no, f'PR created: {res.json()["html_url"]}')
         print("===> Navigating to PR. 请手动分配reviewer和tester。并按语雀项目规定配置PR。")
         print("同时请记得将JIRA issue assign给测试人员。")
