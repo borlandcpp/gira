@@ -851,7 +851,7 @@ def start(issue_no):
     default="master",
     help="Specify target branch. Default is master",
 )
-@click.argument("issue_no")
+@click.argument("issue_no", nargs=-1)
 def finish(branch, issue_no):
     "Finish JIRA issue"
     user = _conf["gitee"]["user"]
@@ -880,6 +880,10 @@ def finish(branch, issue_no):
             print("!!! It looks like your branch needs rebasing.")
             return 4
 
+        if not issue_no:
+            issue_no = gitee.git.current_branch()
+        else:
+            issue_no = issue_no[0]
         print(f"===> Creating PR for {issue_no}...")
         title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
         body = "%s\nFix Version/s: %s" % (
