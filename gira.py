@@ -262,9 +262,13 @@ class Git():
     def needs_rebase(self, head, base="master"):
         "Assume that git pull has been done"
         # intentionally not handling exception here
-        mb = self.repo.merge_base(base, head)[0]  # FIXME: not sure why this is a list
-        master_head = self.repo.refs["master"].commit
-        return mb.hexsha != master_head.hexsha
+        # rebase logic has to be done locally so
+        current = self.current_branch()
+        self.repo.git.checkout(base)
+        self.repo.git.checkout(current)
+        bb = self.repo.merge_base(base, head)[0]  # FIXME: not sure why this is a list
+        base_head = self.repo.refs[base].commit
+        return bb.hexsha != base_head.hexsha
 
     def remote_branches(self):
         for ref in self.repo.refs:
@@ -892,19 +896,21 @@ def finish(branch, issue_no):
         print(f"===> Pushing to remote repo...")
         gitee.git.repo.git.push()
 
-        if gitee.git.needs_rebase(br, "master"):
-            print("!!! It looks like your branch needs rebasing.")
-            return 4
-
         if not issue_no:
             issue_no = gitee.git.current_branch()
         else:
             issue_no = issue_no[0]
+
+        target_br = jira.get_target_branch(issue_no)
+        if gitee.git.needs_rebase(br, target_br):
+            print("!!! It looks like your branch needs rebasing.")
+            return 4
+
         print(f"===> Creating PR for {issue_no}...")
         title = f"{issue_no} {jira.get_summary(issue_no)}"  # causes exception
         body = "%s\nFix Version/s: %s" % (
             jira.get_issue_url(issue_no), ",".join(jira.get_fix_versions(issue_no)))
-        res = gitee.create_pr(title, br, body, branch)  # TODO: automatically fill in assignee
+        res = gitee.create_pr(title, br, body, target_br)  # TODO: automatically fill in assignee
         jira.finish_issue(issue_no, f'PR created: {res.json()["html_url"]}')
         print("===> Navigating to PR. 请手动分配reviewer和tester。并按语雀项目规定配置PR。")
         print("同时请记得将JIRA issue assign给测试人员。")
@@ -1047,6 +1053,8 @@ def _test_git():
         print("XXX: Current branch should be master")
     if not git.needs_rebase("rebase_test", "master"):
         print("XXX: rebase is required")
+    if git.needs_rebase("release-1.1", "release-1"):
+        print("XXX: rebase NOT required")
     if not "test-remote-branches" in git.remote_branches():
         print("XXX: expecting a remote branch 'test-remote-branches'")
 
