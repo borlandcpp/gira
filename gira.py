@@ -347,6 +347,22 @@ class MyJira():
         rv = ReleaseVersion(fv)
         return f"release-{rv.major}.{rv.minor}"
 
+    def _target_br(self, fvs):
+        master = False
+        rv = None
+        for fv in fvs:
+            rv = ReleaseVersion(fv)
+            if rv.fix == "0":  # '0' means trunk
+                master = True
+                break
+        if not master:
+            return f"release-{rv.major}.{rv.minor}"
+        return "master"
+
+    def get_target_branch(self, issue_id):
+        "Returns PR target branch. There is bug when more than 2 fixVersions"
+        return self._target_br(self.get_fix_versions(issue_id))
+
     def trunk_required(self, issue_id):
         return self.get_trunk_fix_version(issue_id) is not None
 
@@ -1007,6 +1023,15 @@ def _test_jira():
         print("XXX: expected no children task")
     if jra.get_trunk_fix_version("CLOUD-8825") != "v1.100.0":
         print("XXX: expected CLOUD-8825 to be released in v1.100.0")
+    fvs = ["v1.10.0", "v1.9.1"]
+    if jra._target_br(fvs) != "master":
+        print("XXX: expected target branch master")
+    fvs = ["v1.9.1", "v1.10.0"]
+    if jra._target_br(fvs) != "master":
+        print("XXX: expected target branch master")
+    fvs = ["v1.9.1"]
+    if jra._target_br(fvs) != "release-1.9":
+        print("XXX: expected target branch release-1.9")
 
 
 def _test_git():
