@@ -854,6 +854,7 @@ def start(issue_no):
         print("3. JIRA issue status isn't *In Progress*.")
         print("4. JIRA issue is an Epic or has subtasks.")
         print("5. 你的JIRA是中文的UI.")
+        print("6. You have invalid gitee token.")
 
         return
 
