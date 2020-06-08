@@ -867,13 +867,8 @@ def start(issue_no):
 
 
 @main.command()
-@click.option(
-    "-b", "--branch", "branch",
-    default="master",
-    help="Specify target branch. Default is master",
-)
 @click.argument("issue_no", nargs=-1)
-def finish(branch, issue_no):
+def finish(issue_no):
     "Finish JIRA issue"
     user = _conf["gitee"]["user"]
     token = _conf["gitee"]["token"]
