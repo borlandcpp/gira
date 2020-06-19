@@ -62,7 +62,9 @@ class Gitee():
     def __init__(self, user, token):
         self.user = user
         self.token = token
-        search = [".", "..", "../..", "/you-will-never-find-me///"]
+        # git rev-parse --show-toplevel
+        # git command is not available before Repo()
+        search = [".", "..", "../..", "../../..", "../../../..", "/you-will-never-find-me///"]
         for s in search:
             try:
                 self.git = Git(os.path.abspath(s))
@@ -196,8 +198,11 @@ class Gitee():
         url = os.path.join(Gitee.web_root, self.owner, self.repo)
         _open_url(url)
 
-    def goto_pull(self, id):
-        url = os.path.join(Gitee.web_root, self.owner, self.repo, "pulls", id)
+    def goto_pull(self, id=None):
+        if id is None:
+            url = os.path.join(Gitee.web_root, self.owner, self.repo, "pulls")
+        else:
+            url = os.path.join(Gitee.web_root, self.owner, self.repo, "pulls", id)
         _open_url(url)
 
 
@@ -741,7 +746,7 @@ def gitee():
     token = _conf["gitee"]["token"]
     try:
         gitee = Gitee(user, token)
-        gitee.goto_web()
+        gitee.goto_pull()
     except Exception as e:
         print(e)
 
