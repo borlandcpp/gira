@@ -10,3 +10,9 @@ clean:
 
 test:
 	python gira.py runtests all
+
+
+env:
+	pip install --upgrade pip
+	pip install -r requirements.txt
+	pip install setuptools==44.0.0

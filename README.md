@@ -22,7 +22,7 @@
 * `python3 -m venv venv`
     * **NOTE**: you have to use python 3.7 installed by `brew`
 * `. ./venv/bin/activate`
-* `pip install -r requirements.txt`
+* `make env` to setup the build environment
 * do `make` and then a `gira` command should be installed under `/usr/local/bin`.
     * never tried on Windows
 
