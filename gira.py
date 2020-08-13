@@ -420,6 +420,14 @@ class MyJira():
                 newfv.append({"name": fv.name})
         issue.update(fields={"fixVersions": newfv})
 
+    def include(self, issue_id, version):
+        issue = self.jira.issue(issue_id)
+        if version in issue.fields.fixVersions:
+            return
+        newfv = issue.fields.fixVersions.copy()
+        newfv.append({"name": version})
+        issue.update(fields={"fixVersions": newfv})
+
     def exclude(self, issue_id, version):
         issue = self.jira.issue(issue_id)
         newfv = []
@@ -947,6 +955,20 @@ def pushoff(issue_no, frm, to):
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+
+@main.command()
+@click.argument("version")
+@click.argument("issue_no")
+def include(issue_no, version):
+    "Add issue to a release"
+    try:
+        jira = MyJira(
+            _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+        )
+        jira.include(issue_no, version)
+    except MyJiraError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 @main.command()
 @click.argument("version")
