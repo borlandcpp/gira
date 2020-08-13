@@ -422,9 +422,11 @@ class MyJira():
 
     def include(self, issue_id, version):
         issue = self.jira.issue(issue_id)
-        if version in issue.fields.fixVersions:
-            return
-        newfv = issue.fields.fixVersions.copy()
+        newfv = []
+        for fv in issue.fields.fixVersions:
+            if fv.name == version:
+                return
+            newfv.append({"name": fv.name})
         newfv.append({"name": version})
         issue.update(fields={"fixVersions": newfv})
 
@@ -965,6 +967,7 @@ def include(issue_no, version):
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
+        print(f"Adding {issue_no} to release {version}...")
         jira.include(issue_no, version)
     except MyJiraError as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -979,6 +982,7 @@ def exclude(issue_no, version):
         jira = MyJira(
             _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
         )
+        print(f"Removing {issue_no} from release {version}...")
         jira.exclude(issue_no, version)
     except MyJiraError as e:
         print(f"Error: {e}", file=sys.stderr)
