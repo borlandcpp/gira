@@ -187,6 +187,20 @@ class Gitee():
         adm = "\tadmin" if u["permissions"]["admin"] else ""
         print(f"{u['name']} ({u['login']}){adm}")
 
+    def set_reviewer(self, assignees, testers, no_assignees=1, no_testers=1):
+        res = self.put(
+            self._url(("reviwer", ""), None), 
+            {
+                "assignees": assignees,
+                "testers": testers,
+                "assignees_number": no_assignees,
+                "testers_number": no_testers,
+            }
+        )
+        if not res.status_code == 200:
+            raise GiteeError(res.text)
+        pass
+
     def print_branch(self, br):
         prot = ", protected" if br["protected"] else ""
         print(f"{br['name']}{prot}")
@@ -304,6 +318,11 @@ class ReleaseVersion():
         self.project = mobj.group(4) or ""
         if self.project:
             self.project = self.project[1:]
+
+    def previous(self):
+        ver = f"v{self.major}.{self.minor-1}.self.fix"
+        if self.project:
+            ver += "-" + self.project
 
     def __str__(self):
         return self.release
@@ -480,6 +499,7 @@ def _good_jira_issue(jira, issue_id, force=False):
             continue
         if rel.fix == "0":  # 1
             trunk += 1
+            major_rel = rel
         elif rel.project:  # 3
             proj_fix += 1
         else:  # has to be 2
@@ -599,7 +619,7 @@ def merge(no, force, autocp):
             pr.html_url,
         )
         print(f"===> Updating jira issue status...")
-        jira.update_issue(pr.issue_id, comment, "31")  # resolve
+        jira.update_issue(pr.issue_id, comment, _conf["jira"]["done_no"])
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
             print(f"fixVersions: {', '.join(fv)}")
@@ -855,7 +875,7 @@ def start(issue_no):
         print("Issue has no fix versions or not assigned to someone. Aborting...")
         return False
     print("===> Updating JIRA issue status...")
-    jira.update_issue(issue_no, "Starting...", '21')
+    jira.update_issue(issue_no, "Starting...", _conf["jira"]["in_progress_no"])
 
     print("===> Waiting for remote branch to be created...")
     # wait for webhook to create remote branch
@@ -870,6 +890,8 @@ def start(issue_no):
         print("4. JIRA issue is an Epic or has subtasks.")
         print("5. 你的JIRA是中文的UI.")
         print("6. You have invalid gitee token.")
+
+        print(e)
 
         return
 
@@ -1004,6 +1026,21 @@ def runtests(what):
         _test_gitee()
 
 
+@main.command()
+def shell():
+    jira = MyJira(
+        _conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"]
+    )
+    from ipdb import set_trace; set_trace()
+
+
+@main.command()
+@click.argument("issue")
+def list_transitions(issue):
+    jra = MyJira(_conf["jira"]["url"], _conf["jira"]["user"], _conf["jira"]["passwd"])
+    jra.list_transitions(issue)
+
+
 def load_conf(*names):
     global _conf
     # TODO: should validate config file
@@ -1084,8 +1121,6 @@ def _test_git():
         print("XXX: rebase NOT required")
     if not "test-remote-branches" in git.remote_branches():
         print("XXX: expecting a remote branch 'test-remote-branches'")
-
-
 
 
 def _test_gitee():
