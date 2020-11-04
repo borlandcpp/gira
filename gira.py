@@ -350,7 +350,7 @@ class MyJira():
         self.jira.transition_issue(issue.key, transition)
 
     def finish_issue(self, issue_id, comment):
-        self.update_issue(issue_id, comment, "81")
+        self.update_issue(issue_id, comment, _conf["jira"]["ready_for_test_no"])
 
     def get_fix_versions(self, issue_id):
         issue = self.jira.issue(issue_id)
@@ -663,7 +663,7 @@ def merge(no, force, autocp):
     except git.exc.GitCommandError as e:
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
-        jira.update_issue(pr.issue_id, "Cherry picking failed", "41")  # reopen
+        jira.update_issue(pr.issue_id, "Cherry picking failed", _conf["jira"]["reopen_no"])
     return 0
 
 
