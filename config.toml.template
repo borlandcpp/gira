@@ -7,3 +7,10 @@ url = "xxx"
 user = "xxxx"
 token = "xxxx"
 
+
+# JIRA project key, allowing multiple projects
+[XYZ]
+in_progress = 31
+done = 41
+ready_for_test = 71
+reopen = 61

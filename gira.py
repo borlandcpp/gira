@@ -341,8 +341,9 @@ class MyJira():
 
     def update_issue(self, issue_id, comment, transition):
         issue = self.jira.issue(issue_id)
+        project, _ = issue_id.split("-")  # assuming format
         self.jira.add_comment(issue_id, comment)
-        self.jira.transition_issue(issue.key, transition)
+        self.jira.transition_issue(issue.key, _conf[project][transition])
 
     def start_on_issue(self, issue_id, component, transition):
         issue = self.jira.issue(issue_id)
@@ -350,7 +351,7 @@ class MyJira():
         self.jira.transition_issue(issue.key, transition)
 
     def finish_issue(self, issue_id, comment):
-        self.update_issue(issue_id, comment, _conf["jira"]["ready_for_test_no"])
+        self.update_issue(issue_id, comment, "ready_for_test")
 
     def get_fix_versions(self, issue_id):
         issue = self.jira.issue(issue_id)
@@ -619,7 +620,7 @@ def merge(no, force, autocp):
             pr.html_url,
         )
         print(f"===> Updating jira issue status...")
-        jira.update_issue(pr.issue_id, comment, _conf["jira"]["done_no"])
+        jira.update_issue(pr.issue_id, comment, "done")
         fv = jira.get_fix_versions(pr.issue_id)
         if fv:
             print(f"fixVersions: {', '.join(fv)}")
@@ -663,7 +664,7 @@ def merge(no, force, autocp):
     except git.exc.GitCommandError as e:
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
-        jira.update_issue(pr.issue_id, "Cherry picking failed", _conf["jira"]["reopen_no"])
+        jira.update_issue(pr.issue_id, "Cherry picking failed", "reopen")
     return 0
 
 
@@ -875,7 +876,7 @@ def start(issue_no):
         print("Issue has no fix versions or not assigned to someone. Aborting...")
         return False
     print("===> Updating JIRA issue status...")
-    jira.update_issue(issue_no, "Starting...", _conf["jira"]["in_progress_no"])
+    jira.update_issue(issue_no, "Starting...", "in_progress")
 
     print("===> Waiting for remote branch to be created...")
     # wait for webhook to create remote branch
