@@ -343,7 +343,8 @@ class MyJira():
         issue = self.jira.issue(issue_id)
         project, _ = issue_id.split("-")  # assuming format
         self.jira.add_comment(issue_id, comment)
-        self.jira.transition_issue(issue.key, _conf[project][transition])
+        if transition:
+            self.jira.transition_issue(issue.key, _conf[project][transition])
 
     def start_on_issue(self, issue_id, component, transition):
         issue = self.jira.issue(issue_id)
@@ -661,6 +662,7 @@ def merge(no, force, autocp):
     print(f"===> Cherry picking to branches: {', '.join(branches)}...")
     try:
         cherry_pick(gitee.git.repo.git, branches, frm, to, autocp)
+        jira.update_issue(pr.issue_id, f"Cherry-picked to {', '.join(branches)}", "")
     except git.exc.GitCommandError as e:
         print(e)
         print("===> Something went wrong. Re-opending jira issue")
