@@ -4,3 +4,4 @@ dist
 venv/
 build
 __pycache__
+gira.spec
