@@ -20,7 +20,7 @@
 
 # Build
 * `python3 -m venv venv`
-    * **NOTE**: you have to use python 3.7 installed by `brew`
+    * **NOTE**: you have to use python 3.9 installed by `brew`
 * `. ./venv/bin/activate`
 * `make env` to setup the build environment
 * do `make` and then a `gira` command should be installed under `/usr/local/bin`.
