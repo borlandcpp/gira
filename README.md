@@ -33,5 +33,4 @@
 * All related party has to say OK. There seems to be a bug with gitee
 * When jira has 1.7.0 and 1.6.7-cmft, PR goes to release-1.6-cmft, should reject
 * Add `merge --continue` for when cherry pick failed
-* Should assign jira issue to a tester
 * Support non merge commit
